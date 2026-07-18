@@ -20,6 +20,6 @@ RUN composer install --no-dev --optimize-autoloader
 
 RUN chown -R www-data:www-data storage bootstrap/cache
 
-EXPOSE 80
+EXPOSE 10000
 
 CMD ["apache2-foreground"]
