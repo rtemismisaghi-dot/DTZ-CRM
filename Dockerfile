@@ -4,7 +4,7 @@ RUN apt-get update && apt-get install -y \
     git \
     unzip \
     libzip-dev \
-libsqlite3-dev \
+    libsqlite3-dev \
     sqlite3 \
     && docker-php-ext-install pdo pdo_sqlite zip
 
@@ -20,6 +20,10 @@ RUN composer install --no-dev --optimize-autoloader
 
 RUN chown -R www-data:www-data storage bootstrap/cache
 
-EXPOSE 10000
+# Laravel public folder
+RUN sed -ri -e 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/*.conf \
+    && sed -ri -e 's!/var/www/!/var/www/html/public/!g' /etc/apache2/apache2.conf
+
+EXPOSE 80
 
 CMD ["apache2-foreground"]
