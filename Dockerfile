@@ -29,10 +29,6 @@ RUN mkdir -p database \
 
 RUN chown -R www-data:www-data storage bootstrap/cache database
 
-RUN php artisan migrate --force
-
-RUN php artisan db:seed --force
-
 RUN sed -ri -e 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/*.conf
 
 RUN php artisan storage:link || true
