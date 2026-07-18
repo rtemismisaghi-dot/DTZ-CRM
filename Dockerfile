@@ -23,7 +23,13 @@ RUN composer install --no-dev --optimize-autoloader
 
 RUN npm install && npm run build
 
-RUN chown -R www-data:www-data storage bootstrap/cache
+RUN mkdir -p database && touch database/database.sqlite
+
+RUN php artisan migrate --force
+
+RUN php artisan db:seed --force
+
+RUN chown -R www-data:www-data storage bootstrap/cache database
 
 RUN sed -ri -e 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/*.conf
 
