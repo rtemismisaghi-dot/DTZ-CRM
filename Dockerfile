@@ -29,6 +29,8 @@ RUN sed -ri -e 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-avail
 
 RUN php artisan storage:link || true
 
-EXPOSE 80
+EXPOSE 10000
 
-CMD ["apache2-foreground"]
+CMD sed -i "s/Listen 80/Listen ${PORT}/" /etc/apache2/ports.conf \
+ && sed -i "s/:80/:${PORT}/g" /etc/apache2/sites-available/000-default.conf \
+ && apache2-foreground
