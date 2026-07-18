@@ -24,8 +24,6 @@ RUN sed -ri -e 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-avail
 
 RUN php artisan storage:link || true
 
-RUN php artisan config:cache || true
-
 EXPOSE 80
 
 CMD ["apache2-foreground"]
