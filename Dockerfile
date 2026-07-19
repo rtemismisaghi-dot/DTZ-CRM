@@ -40,18 +40,16 @@ RUN mkdir -p database \
 # Permissions
 RUN chown -R www-data:www-data \
     storage bootstrap/cache database
+RUN chmod -R 775 storage bootstrap/cache database
 
 # Apache document root -> public
 RUN sed -ri -e 's!/var/www/html!/var/www/html/public!g' \
     /etc/apache2/sites-available/*.conf
+RUN php artisan migrate --force || true
+RUN php artisan db:seed --force || true
 
-# Storage link
 RUN php artisan storage:link || true
 
-# Laravel cache (safe for production)
-RUN php artisan config:cache || true
-RUN php artisan route:cache || true
-RUN php artisan view:cache || true
 
 EXPOSE 80
 
