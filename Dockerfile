@@ -45,10 +45,7 @@ RUN chmod -R 775 storage bootstrap/cache database
 # Apache document root -> public
 RUN sed -ri -e 's!/var/www/html!/var/www/html/public!g' \
     /etc/apache2/sites-available/*.conf
-RUN php artisan migrate --force || true
-RUN php artisan db:seed --force || true
 
-RUN php artisan storage:link || true
 
 
 EXPOSE 80
