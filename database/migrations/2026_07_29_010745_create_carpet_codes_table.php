@@ -6,27 +6,32 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+
     public function up(): void
     {
-        Schema::create('installation_items', function (Blueprint $table) {
+        Schema::create('carpet_codes', function (Blueprint $table) {
 
             $table->id();
 
-            $table->string('title');
 
-            $table->string('key')->unique();
+            $table->foreignId('carpet_model_id')
+                  ->constrained('carpet_models')
+                  ->cascadeOnDelete();
 
-            $table->integer('price')->default(0);
 
-            $table->boolean('status')->default(true);
+            $table->string('code')
+                  ->unique();
+
 
             $table->timestamps();
 
         });
     }
 
+
     public function down(): void
     {
-        Schema::dropIfExists('installation_items');
+        Schema::dropIfExists('carpet_codes');
     }
+
 };

@@ -8,15 +8,13 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('installation_items', function (Blueprint $table) {
+        Schema::create('carpet_models', function (Blueprint $table) {
 
             $table->id();
 
-            $table->string('title');
+            $table->string('model_name');
 
-            $table->string('key')->unique();
-
-            $table->integer('price')->default(0);
+            $table->string('code')->unique();
 
             $table->boolean('status')->default(true);
 
@@ -27,6 +25,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('installation_items');
+        Schema::dropIfExists('carpet_models');
     }
 };
