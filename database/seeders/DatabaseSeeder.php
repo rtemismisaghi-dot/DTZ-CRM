@@ -16,6 +16,10 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        $this->call([
+            CarpetModelSeeder::class,
+        ]);
+
         User::updateOrCreate(
             [
                 'email' => 'test@example.com',
