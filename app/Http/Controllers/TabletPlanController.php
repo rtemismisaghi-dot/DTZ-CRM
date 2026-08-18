@@ -81,13 +81,162 @@ public function create(Request $request)
         $carpetCode = \App\Models\CarpetCode::find($code);
     }
 
-    return view('tablet.space_create', compact(
+    $html = view('tablet.space_create', compact(
         'space',
         'model',
         'code',
         'carpetModel',
         'carpetCode'
-    ));
+    ))->render();
+
+    // اصلاح نهایی هندسه مربع/مستطیل در خروجی همین صفحه.
+    // این override قبل از اجرای رویدادهای Canvas جایگزین تابع قدیمی می‌شود.
+    $rectangleFix = <<<'JS'
+// ==========================================
+// DTZ RECTANGLE GEOMETRY FIX
+// ==========================================
+
+function createRectangleFromTwoLines(){
+
+    if(lines.length < 2){
+        return;
+    }
+
+    const line1 = lines[0];
+    const line2 = lines[1];
+
+    const lengthMeter = Number(line1.meter);
+    const widthMeter = Number(line2.meter);
+
+    if(!Number.isFinite(lengthMeter) || lengthMeter <= 0 ||
+       !Number.isFinite(widthMeter) || widthMeter <= 0){
+        return;
+    }
+
+    const A = { x: line1.x1, y: line1.y1 };
+    const B = { x: line1.x2, y: line1.y2 };
+    const P = { x: line2.x1, y: line2.y1 };
+    const Q = { x: line2.x2, y: line2.y2 };
+
+    // ضلع دوم باید به نزدیک‌ترین سر ضلع اول متصل شود.
+    const candidates = [
+        { connected: A, far: Q, distance: distance(A, P) },
+        { connected: A, far: P, distance: distance(A, Q) },
+        { connected: B, far: Q, distance: distance(B, P) },
+        { connected: B, far: P, distance: distance(B, Q) }
+    ];
+
+    candidates.sort(function(a, b){
+        return a.distance - b.distance;
+    });
+
+    const connected = candidates[0].connected;
+    const far = candidates[0].far;
+
+    const dx = B.x - A.x;
+    const dy = B.y - A.y;
+    const firstPixelLength = Math.hypot(dx, dy);
+
+    if(firstPixelLength <= 0){
+        return;
+    }
+
+    // بردار واحد ضلع اول.
+    const ux = dx / firstPixelLength;
+    const uy = dy / firstPixelLength;
+
+    // بردار عمود دقیق؛ بنابراین ضلع سوم دقیقاً روبه‌روی ضلع اول است.
+    let perpX = -uy;
+    let perpY = ux;
+
+    // جهت عمود را با سمت واقعی خط دوم هماهنگ می‌کنیم.
+    const secondDx = far.x - connected.x;
+    const secondDy = far.y - connected.y;
+
+    if((secondDx * perpX + secondDy * perpY) < 0){
+        perpX *= -1;
+        perpY *= -1;
+    }
+
+    // طول تصویری مهم نیست؛ طول واقعی از متراژ واردشده می‌آید.
+    // فقط نسبت مقیاس رسم برای نمایش روی Canvas استفاده می‌شود.
+    const secondPixelLength = Math.max(
+        distance(P, Q),
+        firstPixelLength * (widthMeter / Math.max(lengthMeter, 0.0001))
+    );
+
+    const offsetX = perpX * secondPixelLength;
+    const offsetY = perpY * secondPixelLength;
+
+    let C = {
+        x: B.x + offsetX,
+        y: B.y + offsetY
+    };
+
+    let D = {
+        x: A.x + offsetX,
+        y: A.y + offsetY
+    };
+
+    // چهار ضلع همیشه به ترتیب بسته و موازی ساخته می‌شوند.
+    lines = [
+        {
+            x1: A.x,
+            y1: A.y,
+            x2: B.x,
+            y2: B.y,
+            meter: lengthMeter
+        },
+        {
+            x1: connected.x,
+            y1: connected.y,
+            x2: connected.x + offsetX,
+            y2: connected.y + offsetY,
+            meter: widthMeter
+        },
+        {
+            x1: C.x,
+            y1: C.y,
+            x2: D.x,
+            y2: D.y,
+            meter: lengthMeter
+        },
+        {
+            x1: D.x,
+            y1: D.y,
+            x2: A.x,
+            y2: A.y,
+            meter: widthMeter
+        }
+    ];
+
+    const lengthInput = document.getElementById('length');
+    const widthInput = document.getElementById('width');
+
+    if(lengthInput){
+        lengthInput.value = lengthMeter;
+    }
+
+    if(widthInput){
+        widthInput.value = widthMeter;
+    }
+
+    redrawCanvas();
+
+    if(typeof calculateArea === 'function'){
+        calculateArea();
+    }
+}
+JS;
+
+    // تابع قدیمی داخل Blade را با نسخه قطعی هندسی جایگزین می‌کنیم.
+    $pattern = '/\/\/ ==========================================\s*\/\/ ساخت مستطیل از دو ضلع\s*\/\/ ==========================================\s*function createRectangleFromTwoLines\(\)\s*\{.*?\n\}\s*function redrawCanvas\(\)/s';
+
+    $replacement = $rectangleFix . "\n\nfunction redrawCanvas()";
+
+    $html = preg_replace($pattern, $replacement, $html, 1);
+
+    return response($html);
 }
 public function storeSpace(Request $request)
 {
