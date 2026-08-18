@@ -1,0 +1,237 @@
+name: Apply irregular polygon fix
+
+on:
+  push:
+    branches:
+      - agent/fix-irregular-polygon
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/fix-irregular-polygon
+          fetch-depth: 0
+
+      - name: Patch polygon engine
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          p = Path('resources/views/tablet/space_create.blade.php')
+          s = p.read_text(encoding='utf-8')
+
+          start = s.index('canvas.addEventListener(\n    "pointerup"')
+          end = s.index('// ==========================================\n// فاصله دو نقطه', start)
+
+          handler = r'''canvas.addEventListener(
+    "pointerup",
+    function(e){
+
+        if(!drawing)
+            return;
+
+        let rect = canvas.getBoundingClientRect();
+        let endPoint = {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
+        };
+
+        let dx = endPoint.x - startPoint.x;
+        let dy = endPoint.y - startPoint.y;
+        let pixelLength = Math.sqrt(dx * dx + dy * dy);
+
+        drawing = false;
+
+        if(pixelLength < 10){
+            redrawCanvas();
+            return;
+        }
+
+        let isClosingPoint = false;
+        if(irregularMode && lines.length >= 2){
+            let firstPoint = {x: lines[0].x1, y: lines[0].y1};
+            if(distance(endPoint, firstPoint) <= 25){
+                endPoint = {x: firstPoint.x, y: firstPoint.y};
+                isClosingPoint = true;
+            }
+        }
+
+        let line = {
+            x1: startPoint.x,
+            y1: startPoint.y,
+            x2: endPoint.x,
+            y2: endPoint.y,
+            meter: null
+        };
+
+        let value = prompt("متراژ این خط را وارد کنید (متر):");
+        if(value === null){
+            redrawCanvas();
+            return;
+        }
+
+        value = parseFloat(value);
+        if(!Number.isFinite(value) || value <= 0){
+            alert("متراژ وارد شده صحیح نیست.");
+            redrawCanvas();
+            return;
+        }
+
+        line.meter = value;
+        lines.push(line);
+        redrawCanvas();
+
+        if(irregularMode && isClosingPoint){
+            polygonClosed = true;
+            irregularMode = false;
+            document.getElementById("finishIrregularBtn").style.display = "none";
+            calculateIrregularArea();
+            document.getElementById("suggestRoll").innerText = "فضای نامنظم تکمیل شد";
+            document.getElementById("cutInfo").innerText = "پلان بسته و متراژ محاسبه شد";
+            redrawCanvas();
+            return;
+        }
+
+        if(lines.length === 2 && !shapeConfirmed && !irregularMode){
+            let answer = confirm("آیا این فضا مربع یا مستطیل است؟");
+
+            if(answer){
+                shapeConfirmed = true;
+                createRectangleFromTwoLines();
+                return;
+            }
+
+            irregularMode = true;
+            polygonClosed = false;
+            document.getElementById("suggestRoll").innerText = "فضای نامنظم";
+            document.getElementById("cutInfo").innerText = "ضلع بعدی را رسم کنید";
+            document.getElementById("finishIrregularBtn").style.display = "block";
+        }
+    }
+);
+
+// اتمام رسم چندضلعی فقط یک بار ثبت می‌شود.
+document.getElementById("finishIrregularBtn").addEventListener("click", function(){
+    if(!irregularMode)
+        return;
+
+    if(lines.length < 3){
+        alert("برای فضای نامنظم حداقل ۳ ضلع رسم کنید.");
+        return;
+    }
+
+    let lastLine = lines[lines.length - 1];
+    let firstPoint = {x: lines[0].x1, y: lines[0].y1};
+    let lastPoint = {x: lastLine.x2, y: lastLine.y2};
+
+    if(distance(lastPoint, firstPoint) > 1){
+        let closingLine = {
+            x1: lastPoint.x,
+            y1: lastPoint.y,
+            x2: firstPoint.x,
+            y2: firstPoint.y,
+            meter: null
+        };
+
+        let value = prompt("متراژ ضلع پایانی را وارد کنید (متر):");
+        if(value === null)
+            return;
+
+        value = parseFloat(value);
+        if(!Number.isFinite(value) || value <= 0){
+            alert("متراژ وارد شده صحیح نیست.");
+            return;
+        }
+
+        closingLine.meter = value;
+        lines.push(closingLine);
+    }
+
+    polygonClosed = true;
+    irregularMode = false;
+    document.getElementById("finishIrregularBtn").style.display = "none";
+    calculateIrregularArea();
+    document.getElementById("suggestRoll").innerText = "فضای نامنظم تکمیل شد";
+    document.getElementById("cutInfo").innerText = "پلان بسته و متراژ محاسبه شد";
+    redrawCanvas();
+});
+
+    }
+);
+
+
+
+'''
+
+          s = s[:start] + handler + s[end:]
+
+          area_start = s.index('function calculateIrregularArea(){')
+          area_end = s.index('// پاک کردن نقشه', area_start)
+
+          area_fn = r'''function calculateIrregularArea(){
+
+    if(!polygonClosed || lines.length < 3)
+        return;
+
+    let points = [{x: 0, y: 0}];
+    let currentX = 0;
+    let currentY = 0;
+
+    for(const line of lines){
+        const dx = line.x2 - line.x1;
+        const dy = line.y2 - line.y1;
+        const pixelLength = Math.hypot(dx, dy);
+        const meter = parseFloat(line.meter);
+
+        if(!Number.isFinite(meter) || meter <= 0 || pixelLength <= 0)
+            return;
+
+        currentX += (dx / pixelLength) * meter;
+        currentY += (dy / pixelLength) * meter;
+        points.push({x: currentX, y: currentY});
+    }
+
+    // آخرین نقطه، نقطه بسته‌شدن است و نباید دوباره به‌عنوان یک گوشه مستقل شمرده شود.
+    points.pop();
+
+    if(points.length < 3)
+        return;
+
+    let area = 0;
+    for(let i = 0; i < points.length; i++){
+        const a = points[i];
+        const b = points[(i + 1) % points.length];
+        area += a.x * b.y - b.x * a.y;
+    }
+
+    area = Math.abs(area) / 2;
+
+    if(!Number.isFinite(area) || area <= 0)
+        return;
+
+    document.getElementById("area").innerText = area.toFixed(2);
+    document.getElementById("hiddenArea").value = area.toFixed(2);
+    suggestRollSize();
+
+    console.log("IRREGULAR POLYGON AREA:", area, points);
+}
+
+
+'''
+
+          s = s[:area_start] + area_fn + s[area_end:]
+          p.write_text(s, encoding='utf-8')
+
+      - name: Commit fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add resources/views/tablet/space_create.blade.php
+          git diff --cached --quiet || git commit -m "Fix irregular polygon drawing and area calculation"
+          git push origin agent/fix-irregular-polygon
