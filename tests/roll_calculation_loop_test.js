@@ -1,7 +1,6 @@
 /* DTZ roll calculation exhaustive test: 3m fixed width, lengths 1..15. */
 function getStripCount(width) {
     if (width <= 3) return 1;
-    if (width > 3 && width < 5.5) return 1;
     if (width >= 5.5 && width <= 6) return 2;
     if (width >= 8.5 && width <= 9) return 3;
     if (width >= 11.5 && width <= 12) return 4;
@@ -9,8 +8,13 @@ function getStripCount(width) {
 }
 
 function getCombinedLength(width, length) {
-    // Project business rule: 4x4 => 3x6 (3x4 + 3x1 + 3x1).
-    if (width > 3 && width < 5.5) return Math.ceil(length) + 2;
+    // For 3 < width < 5.5, convert the required room area into an
+    // equivalent 3m-roll length. This preserves 4x4 => 3x6.
+    if (width > 3 && width < 5.5) {
+        return Math.ceil((width * length) / 3 - 1e-9);
+    }
+
+    // Near 6/9/12m widths, combine the 3m-strip lengths first.
     return Math.ceil(getStripCount(width) * length - 1e-9);
 }
 
@@ -18,7 +22,7 @@ function splitRollLength(totalLength) {
     const target = Math.ceil(totalLength - 1e-9);
     if (target <= 0) return [];
 
-    // Minimum number of pieces, then balanced lengths:
+    // Minimum possible number of pieces, then balanced lengths.
     // 17 => 9+8, never 15+2.
     const count = Math.ceil(target / 15);
     const base = Math.floor(target / count);
