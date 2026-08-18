@@ -6,6 +6,8 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\MeasurementController;
 use App\Http\Controllers\InstallationController;
+use App\Http\Controllers\Tablet\TabletController;
+use App\Http\Controllers\TabletPlanController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -97,3 +99,30 @@ Route::get('/installations/{installation}/prepare',
 });
 
 require __DIR__.'/auth.php';
+// ==========================
+// DTZ Tablet
+// ==========================
+
+Route::get('/dtztablet', [TabletController::class, 'index'])
+    ->name('tablet.index');
+
+Route::get('/dtztablet/plan',
+    [TabletPlanController::class, 'index'])
+    ->name('tablet.plan');
+
+Route::get('/dtztablet/space/create',
+    [TabletPlanController::class, 'create'])
+    ->name('tablet.space.create');
+
+Route::post('/dtztablet/space/store',
+    [TabletPlanController::class, 'storeSpace'])
+    ->name('tablet.space.store');
+
+Route::delete('/dtztablet/space/{space}',
+    [TabletPlanController::class, 'destroy'])
+    ->name('tablet.space.destroy');
+
+Route::post(
+    '/tablet/space/analyze-image',
+    [TabletController::class, 'analyzeSpaceImage']
+)->name('tablet.space.analyze-image');
