@@ -90,7 +90,6 @@ public function create(Request $request)
     ))->render();
 
     // اصلاح نهایی هندسه مربع/مستطیل در خروجی همین صفحه.
-    // این override قبل از اجرای رویدادهای Canvas جایگزین تابع قدیمی می‌شود.
     $rectangleFix = <<<'JS'
 // ==========================================
 // DTZ RECTANGLE GEOMETRY FIX
@@ -118,7 +117,7 @@ function createRectangleFromTwoLines(){
     const P = { x: line2.x1, y: line2.y1 };
     const Q = { x: line2.x2, y: line2.y2 };
 
-    // ضلع دوم باید به نزدیک‌ترین سر ضلع اول متصل شود.
+    // مشخص می‌کنیم ضلع دوم به کدام سر ضلع اول وصل شده است.
     const candidates = [
         { connected: A, far: Q, distance: distance(A, P) },
         { connected: A, far: P, distance: distance(A, Q) },
@@ -141,15 +140,14 @@ function createRectangleFromTwoLines(){
         return;
     }
 
-    // بردار واحد ضلع اول.
+    // بردار واحد ضلع اول و بردار عمود دقیق آن.
     const ux = dx / firstPixelLength;
     const uy = dy / firstPixelLength;
 
-    // بردار عمود دقیق؛ بنابراین ضلع سوم دقیقاً روبه‌روی ضلع اول است.
     let perpX = -uy;
     let perpY = ux;
 
-    // جهت عمود را با سمت واقعی خط دوم هماهنگ می‌کنیم.
+    // سمت مستطیل از جهت واقعی ضلع دوم گرفته می‌شود.
     const secondDx = far.x - connected.x;
     const secondDy = far.y - connected.y;
 
@@ -158,8 +156,7 @@ function createRectangleFromTwoLines(){
         perpY *= -1;
     }
 
-    // طول تصویری مهم نیست؛ طول واقعی از متراژ واردشده می‌آید.
-    // فقط نسبت مقیاس رسم برای نمایش روی Canvas استفاده می‌شود.
+    // طول تصویری ضلع دوم برای نمایش، ولی هندسه کاملاً عمود است.
     const secondPixelLength = Math.max(
         distance(P, Q),
         firstPixelLength * (widthMeter / Math.max(lengthMeter, 0.0001))
@@ -168,17 +165,19 @@ function createRectangleFromTwoLines(){
     const offsetX = perpX * secondPixelLength;
     const offsetY = perpY * secondPixelLength;
 
-    let C = {
+    // چهار گوشه دقیقاً یک مستطیل می‌سازند.
+    const C = {
         x: B.x + offsetX,
         y: B.y + offsetY
     };
 
-    let D = {
+    const D = {
         x: A.x + offsetX,
         y: A.y + offsetY
     };
 
-    // چهار ضلع همیشه به ترتیب بسته و موازی ساخته می‌شوند.
+    // مهم: ترتیب همیشه A -> B -> C -> D -> A است.
+    // بنابراین دیگر ضلع روبه‌رو حذف یا با ضلع مجاور تکراری نمی‌شود.
     lines = [
         {
             x1: A.x,
@@ -188,10 +187,10 @@ function createRectangleFromTwoLines(){
             meter: lengthMeter
         },
         {
-            x1: connected.x,
-            y1: connected.y,
-            x2: connected.x + offsetX,
-            y2: connected.y + offsetY,
+            x1: B.x,
+            y1: B.y,
+            x2: C.x,
+            y2: C.y,
             meter: widthMeter
         },
         {
