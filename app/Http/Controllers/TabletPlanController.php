@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\TabletSpace;
-use Illuminate\Support\Str;
+use App\Models\CarpetCode;
 use App\Models\CarpetModel;
+use App\Models\TabletSpace;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class TabletPlanController extends Controller
 {
@@ -14,116 +15,87 @@ class TabletPlanController extends Controller
         $product = $request->get('product');
 
         if ($product) {
-            session([
-                'tablet_product' => $product
-            ]);
+            session(['tablet_product' => $product]);
         }
 
         $product = session('tablet_product');
 
         $title = match ($product) {
-
-            'carpet'     => 'پلان اجرای موکت',
-
-            'grass'      => 'پلان اجرای چمن مصنوعی',
-
-            'tile'       => 'پلان اجرای موکت تایل',
-
-            'laminate'   => 'پلان اجرای لمینت',
-
-            'wallpaper'  => 'پلان اجرای کاغذ دیواری',
-
-            default      => 'پلان پروژه',
-
+            'carpet' => 'پلان اجرای موکت',
+            'grass' => 'پلان اجرای چمن مصنوعی',
+            'tile' => 'پلان اجرای موکت تایل',
+            'laminate' => 'پلان اجرای لمینت',
+            'wallpaper' => 'پلان اجرای کاغذ دیواری',
+            default => 'پلان پروژه',
         };
 
         if (!session()->has('project_token')) {
-
-            session([
-                'project_token' => Str::uuid()->toString()
-            ]);
-
+            session(['project_token' => Str::uuid()->toString()]);
         }
 
         $projectToken = session('project_token');
 
-      $spaces = TabletSpace::with([
-    'carpetModel',
-    'carpetCode'
-])
-->where(
-    'project_token',
-    $projectToken
-)
-->get();
+        $spaces = TabletSpace::with(['carpetModel', 'carpetCode'])
+            ->where('project_token', $projectToken)
+            ->get();
 
-$carpetModels = CarpetModel::with('codes')->get();
+        $carpetModels = CarpetModel::with('codes')->get();
 
-return view('tablet.plan', compact(
-    'spaces',
-    'title',
-    'carpetModels'
-));
+        return view('tablet.plan', compact('spaces', 'title', 'carpetModels'));
     }
 
-public function create(Request $request)
-{
-    $space = $request->get('space');
+    public function create(Request $request)
+    {
+        $space = trim((string) $request->query('space', ''));
+        $modelId = $request->query('model');
+        $codeId = $request->query('code');
 
-    $model = $request->get('model');
-    $code = $request->get('code');
+        $carpetModel = $modelId !== null && $modelId !== ''
+            ? CarpetModel::with('codes')->find($modelId)
+            : null;
 
-    $carpetModel = CarpetModel::find($model);
+        $carpetCode = $codeId !== null && $codeId !== ''
+            ? CarpetCode::find($codeId)
+            : null;
 
-    $carpetCode = null;
-
-    if ($code) {
-        $carpetCode = \App\Models\CarpetCode::find($code);
+        return view('tablet.space_create', [
+            'space' => $space,
+            'model' => $modelId,
+            'code' => $codeId,
+            'carpetModel' => $carpetModel,
+            'carpetCode' => $carpetCode,
+        ]);
     }
 
-    return view('tablet.space_create', compact(
-        'space',
-        'model',
-        'code',
-        'carpetModel',
-        'carpetCode'
-    ));
-}
-public function storeSpace(Request $request)
-{
-    $request->validate([
-        'name' => 'required'
-    ]);
-  
+    public function storeSpace(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string'],
+        ]);
 
-    $space = new TabletSpace();
+        $space = new TabletSpace();
+        $space->project_token = session('project_token');
+        $space->name = $validated['name'];
+        $space->drawing = $request->input('drawing');
+        $space->area = $request->input('area');
+        $space->roll = $request->input('roll');
+        $space->roll_count = $request->input('roll_count');
+        $space->carpet_model_id = $request->input('carpet_model_id');
+        $space->carpet_code_id = $request->input('carpet_code_id');
+        $space->save();
 
-    $space->project_token = session('project_token');
-    $space->name = $request->name;
-    $space->drawing = $request->drawing;
-    $space->area = $request->area;
-    $space->roll = $request->roll;
-    $space->roll_count = $request->roll_count;
-    $space->carpet_model_id = $request->carpet_model_id;
+        return redirect()->route('tablet.plan', [
+            'product' => session('tablet_product'),
+        ]);
+    }
 
-$space->carpet_code_id = $request->carpet_code_id;
+    public function destroy($id)
+    {
+        $space = TabletSpace::findOrFail($id);
+        $space->delete();
 
-    $space->save();
-
-    return redirect()->route('tablet.plan', [
-        'product' => session('tablet_product')
-    ]);
-}
-
-
-public function destroy($id)
-{
-    $space = TabletSpace::findOrFail($id);
-
-    $space->delete();
-
-    return redirect()->route('tablet.plan', [
-        'product' => session('tablet_product')
-    ]);
-}
+        return redirect()->route('tablet.plan', [
+            'product' => session('tablet_product'),
+        ]);
+    }
 }
