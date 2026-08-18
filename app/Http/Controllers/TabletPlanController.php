@@ -58,7 +58,7 @@ class TabletPlanController extends Controller
             ? CarpetCode::find($codeId)
             : null;
 
-        return view('tablet.space_create', [
+        return view('tablet.space_create_agent', [
             'space' => $space,
             'model' => $modelId,
             'code' => $codeId,
