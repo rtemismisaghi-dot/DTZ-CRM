@@ -39,10 +39,16 @@ RUN composer install --no-dev --optimize-autoloader
 RUN npm install
 RUN npm run build
 
+# Ensure Laravel has a SQLite database in the container and initialize
+# database-backed sessions/cache/queue tables before the application starts.
+RUN mkdir -p database \
+    && touch database/database.sqlite \
+    && php artisan migrate --force
+
 # Permissions
 RUN mkdir -p storage/framework/cache/data \
-    && chown -R www-data:www-data storage bootstrap/cache \
-    && chmod -R 775 storage bootstrap/cache
+    && chown -R www-data:www-data storage bootstrap/cache database \
+    && chmod -R 775 storage bootstrap/cache database
 
 # Apache document root -> public
 RUN sed -ri -e 's!/var/www/html!/var/www/html/public!g' \
