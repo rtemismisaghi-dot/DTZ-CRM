@@ -39,18 +39,10 @@ RUN composer install --no-dev --optimize-autoloader
 RUN npm install
 RUN npm run build
 
-# Ensure Laravel has a SQLite database in the container and initialize
-# database-backed sessions/cache/queue tables before the application starts.
-# Seed the initial login user so a fresh Render image is immediately usable.
-RUN mkdir -p database \
-    && touch database/database.sqlite \
-    && php artisan migrate --force \
-    && php artisan db:seed --force
-
-# Permissions
+# Runtime directories and permissions
 RUN mkdir -p storage/framework/cache/data \
-    && chown -R www-data:www-data storage bootstrap/cache database \
-    && chmod -R 775 storage bootstrap/cache database
+    && chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
 
 # Apache document root -> public
 RUN sed -ri -e 's!/var/www/html!/var/www/html/public!g' \
@@ -60,6 +52,8 @@ RUN sed -ri -e 's!/var/www/html!/var/www/html/public!g' \
 RUN php artisan optimize:clear || true
 
 # Render supplies PORT (normally 10000). Apache must listen on that port.
+# Migrations and seed run at container startup so Laravel uses the configured
+# PostgreSQL database instead of creating a database inside the Docker image.
 EXPOSE 10000
 
-CMD ["sh", "-c", "PORT=${PORT:-10000}; sed -ri \"s/^Listen [0-9]+/Listen ${PORT}/\" /etc/apache2/ports.conf; sed -ri \"s/<VirtualHost \\*:80>/<VirtualHost *:${PORT}>/g\" /etc/apache2/sites-available/*.conf; exec apache2-foreground"]
+CMD ["sh", "-c", "php artisan migrate --force && php artisan db:seed --force && PORT=${PORT:-10000}; sed -ri \"s/^Listen [0-9]+/Listen ${PORT}/\" /etc/apache2/ports.conf; sed -ri \"s/<VirtualHost \\*:80>/<VirtualHost *:${PORT}>/g\" /etc/apache2/sites-available/*.conf; exec apache2-foreground"]
