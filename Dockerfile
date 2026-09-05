@@ -41,9 +41,11 @@ RUN npm run build
 
 # Ensure Laravel has a SQLite database in the container and initialize
 # database-backed sessions/cache/queue tables before the application starts.
+# Seed the initial login user so a fresh Render image is immediately usable.
 RUN mkdir -p database \
     && touch database/database.sqlite \
-    && php artisan migrate --force
+    && php artisan migrate --force \
+    && php artisan db:seed --force
 
 # Permissions
 RUN mkdir -p storage/framework/cache/data \
