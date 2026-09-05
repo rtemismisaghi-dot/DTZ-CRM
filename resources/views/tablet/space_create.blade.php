@@ -13,14 +13,12 @@ DTZ Tablet - Space
 </title>
 
 
-<link
-href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.rtl.min.css"
-rel="stylesheet">
+<link 
+href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
 
 
-<link
-href="{{ asset('tablet/css/dtz-tablet.css') }}"
-rel="stylesheet">
+<link 
+href="{{ asset('tablet/css/dtz-tablet.css') }}" rel="stylesheet">
 
 
 </head>
@@ -530,18 +528,15 @@ function resizeCanvas(){
 
 
     let box = canvas.getBoundingClientRect();
+    let dpr = window.devicePixelRatio || 1;
 
 
-    canvas.width = box.width * window.devicePixelRatio;
+    canvas.width = box.width * dpr;
+    canvas.height = box.height * dpr;
 
 
-    canvas.height = box.height * window.devicePixelRatio;
-
-
-    ctx.scale(
-        window.devicePixelRatio,
-        window.devicePixelRatio
-    );
+    // جلوگیری از جمع شدن scale بعد از هر resize
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
 
     redrawCanvas();
@@ -1101,11 +1096,9 @@ function distance(a, b){
         a.x -
         b.x;
 
-
     let dy =
         a.y -
         b.y;
-
 
     return Math.sqrt(
         dx * dx +
@@ -1125,501 +1118,202 @@ function createRectangleFromTwoLines(){
     if(lines.length < 2)
         return;
 
+    const line1 = lines[0];
+    const line2 = lines[1];
 
-    let line1 =
-        lines[0];
-
-
-    let line2 =
-        lines[1];
-
+    const lengthMeter = parseFloat(line1.meter);
+    const widthMeter  = parseFloat(line2.meter);
 
     if(
-        !line1.meter ||
-        !line2.meter
+        !Number.isFinite(lengthMeter) ||
+        lengthMeter <= 0 ||
+        !Number.isFinite(widthMeter) ||
+        widthMeter <= 0
     ){
-
         return;
-
     }
 
-
     // =====================================
-    // ضلع اول
-    // A ---------------- B
+    // ضلع اول: A → B
     // =====================================
 
-    let A = {
-
-        x:
-            line1.x1,
-
-        y:
-            line1.y1
-
+    const A = {
+        x: line1.x1,
+        y: line1.y1
     };
 
-
-    let B = {
-
-        x:
-            line1.x2,
-
-        y:
-            line1.y2
-
+    const B = {
+        x: line1.x2,
+        y: line1.y2
     };
 
-
     // =====================================
-    // دو سر ضلع دوم
+    // دو سر خط دوم
+    // فقط برای تشخیص سمت مستطیل استفاده می‌شوند.
+    // شکل نهایی بر اساس متراژ واقعی ساخته می‌شود.
     // =====================================
 
-    let P = {
-
-        x:
-            line2.x1,
-
-        y:
-            line2.y1
-
+    const P = {
+        x: line2.x1,
+        y: line2.y1
     };
 
-
-    let Q = {
-
-        x:
-            line2.x2,
-
-        y:
-            line2.y2
-
+    const Q = {
+        x: line2.x2,
+        y: line2.y2
     };
 
-
     // =====================================
-    // نزدیک‌ترین سر ضلع دوم
-    // به یکی از دو سر ضلع اول
+    // طول تصویری ضلع اول
     // =====================================
 
-    let AP =
-        distance(A, P);
+    const dx = B.x - A.x;
+    const dy = B.y - A.y;
 
+    const firstPixelLength =
+        Math.hypot(dx, dy);
 
-    let AQ =
-        distance(A, Q);
-
-
-    let BP =
-        distance(B, P);
-
-
-    let BQ =
-        distance(B, Q);
-
-
-    let connectedPoint;
-    let farPoint;
-
-
-    if(
-        AP <= AQ &&
-        AP <= BP &&
-        AP <= BQ
-    ){
-
-        connectedPoint = A;
-
-        farPoint = Q;
-
-    }
-
-    else if(
-        AQ <= AP &&
-        AQ <= BP &&
-        AQ <= BQ
-    ){
-
-        connectedPoint = A;
-
-        farPoint = P;
-
-    }
-
-    else if(
-        BP <= AP &&
-        BP <= AQ &&
-        BP <= BQ
-    ){
-
-        connectedPoint = B;
-
-        farPoint = Q;
-
-    }
-
-    else{
-
-        connectedPoint = B;
-
-        farPoint = P;
-
-    }
-
-
-    // =====================================
-    // بردار ضلع اول
-    // =====================================
-
-    let dx =
-        B.x -
-        A.x;
-
-
-    let dy =
-        B.y -
-        A.y;
-
-
-    let firstLength =
-        Math.sqrt(
-            dx * dx +
-            dy * dy
-        );
-
-
-    if(firstLength <= 0)
+    if(firstPixelLength < 1)
         return;
-
 
     // =====================================
     // بردار واحد ضلع اول
     // =====================================
 
-    let ux =
-        dx /
-        firstLength;
-
-
-    let uy =
-        dy /
-        firstLength;
-
+    const ux = dx / firstPixelLength;
+    const uy = dy / firstPixelLength;
 
     // =====================================
-    // بردار عمود
+    // بردار عمود واقعی به ضلع اول
     // =====================================
 
-    let perpX =
-        -uy;
-
-
-    let perpY =
-        ux;
-
+    let nx = -uy;
+    let ny = ux;
 
     // =====================================
-    // بردار خط دوم
+    // تشخیص سمت خط دوم نسبت به ضلع اول
     // =====================================
 
-    let sx =
-        farPoint.x -
-        connectedPoint.x;
+    const sideP =
+        (P.x - A.x) * nx +
+        (P.y - A.y) * ny;
 
+    const sideQ =
+        (Q.x - A.x) * nx +
+        (Q.y - A.y) * ny;
 
-    let sy =
-        farPoint.y -
-        connectedPoint.y;
-
-
-    let secondLength =
-        Math.sqrt(
-            sx * sx +
-            sy * sy
-        );
-
-
-    if(secondLength <= 0)
-        return;
-
-
-    // =====================================
-    // تعیین سمت مستطیل
-    // =====================================
-
-    let side =
-        sx * perpX +
-        sy * perpY;
-
+    const side = sideP + sideQ;
 
     if(side < 0){
-
-        perpX *= -1;
-
-        perpY *= -1;
-
+        nx *= -1;
+        ny *= -1;
     }
 
+    // اگر خط دوم تقریباً روی همان خط اول باشد،
+    // side برابر صفر می‌شود و همین جهت پیش‌فرض
+    // عمود حفظ می‌شود؛ بنابراین اضلاع هرگز روی
+    // یک خط باقی نمی‌مانند.
 
     // =====================================
-    // بردار عرض
+    // تبدیل متراژ واقعی به پیکسل
     // =====================================
+    // مقیاس بر اساس ضلع اول است تا نسبت طول و عرض
+    // مطابق متراژ واقعی باشد.
 
-    let offsetX =
-        perpX *
-        secondLength;
+    const pixelsPerMeter =
+        firstPixelLength / lengthMeter;
 
-
-    let offsetY =
-        perpY *
-        secondLength;
-
+    const widthPixelLength =
+        widthMeter * pixelsPerMeter;
 
     // =====================================
-    // ساخت چهار گوشه
+    // دو گوشه ضلع مقابل
     // =====================================
 
-    let C;
-    let D;
+    const D = {
+        x: A.x + nx * widthPixelLength,
+        y: A.y + ny * widthPixelLength
+    };
 
-
-    if(
-        connectedPoint === A
-    ){
-
-        /*
-            A ---------------- B
-            |                  |
-            |                  |
-            D ---------------- C
-        */
-
-
-        D = {
-
-            x:
-                A.x +
-                offsetX,
-
-            y:
-                A.y +
-                offsetY
-
-        };
-
-
-        C = {
-
-            x:
-                B.x +
-                offsetX,
-
-            y:
-                B.y +
-                offsetY
-
-        };
-
-    }
-
-    else{
-
-        /*
-            A ---------------- B
-            |                  |
-            |                  |
-            D ---------------- C
-        */
-
-
-        C = {
-
-            x:
-                B.x +
-                offsetX,
-
-            y:
-                B.y +
-                offsetY
-
-        };
-
-
-        D = {
-
-            x:
-                A.x +
-                offsetX,
-
-            y:
-                A.y +
-                offsetY
-
-        };
-
-    }
-
+    const C = {
+        x: B.x + nx * widthPixelLength,
+        y: B.y + ny * widthPixelLength
+    };
 
     // =====================================
     // چهار ضلع نهایی
+    // ترتیب: A → B → C → D → A
     // =====================================
 
     lines = [
 
-        // -------------------------------
-        // ضلع اول
-        // -------------------------------
-
         {
-
-            x1:
-                A.x,
-
-            y1:
-                A.y,
-
-            x2:
-                B.x,
-
-            y2:
-                B.y,
-
-            meter:
-                line1.meter
-
+            x1: A.x,
+            y1: A.y,
+            x2: B.x,
+            y2: B.y,
+            meter: lengthMeter
         },
 
-
-        // -------------------------------
-        // ضلع دوم
-        // -------------------------------
-
         {
-
-            x1:
-                connectedPoint.x,
-
-            y1:
-                connectedPoint.y,
-
-            x2:
-                connectedPoint.x +
-                offsetX,
-
-            y2:
-                connectedPoint.y +
-                offsetY,
-
-            meter:
-                line2.meter
-
+            x1: B.x,
+            y1: B.y,
+            x2: C.x,
+            y2: C.y,
+            meter: widthMeter
         },
 
-
-        // -------------------------------
-        // ضلع سوم
-        // روبه‌روی ضلع اول
-        // -------------------------------
-
         {
-
-            x1:
-                C.x,
-
-            y1:
-                C.y,
-
-            x2:
-                D.x,
-
-            y2:
-                D.y,
-
-            meter:
-                line1.meter
-
+            x1: C.x,
+            y1: C.y,
+            x2: D.x,
+            y2: D.y,
+            meter: lengthMeter
         },
 
-
-        // -------------------------------
-        // ضلع چهارم
-        // روبه‌روی ضلع دوم
-        // -------------------------------
-
         {
-
-            x1:
-                D.x,
-
-            y1:
-                D.y,
-
-            x2:
-                A.x,
-
-            y2:
-                A.y,
-
-            meter:
-                line2.meter
-
+            x1: D.x,
+            y1: D.y,
+            x2: A.x,
+            y2: A.y,
+            meter: widthMeter
         }
 
     ];
 
+    // =====================================
+    // انتقال ابعاد به ورودی‌ها
+    // =====================================
+
+    const lengthInput =
+        document.getElementById("length");
+
+    const widthInput =
+        document.getElementById("width");
+
+    if(lengthInput)
+        lengthInput.value = lengthMeter;
+
+    if(widthInput)
+        widthInput.value = widthMeter;
 
     // =====================================
-    // رسم شکل کامل
+    // محاسبه مساحت
+    // =====================================
+
+    if(typeof calculateArea === "function")
+        calculateArea();
+
+    // =====================================
+    // فقط شکل نهایی رسم شود
     // =====================================
 
     redrawCanvas();
 
-
-    // =====================================
-    // انتقال ابعاد به محاسبه
-    // =====================================
-
-// =====================================
-// انتقال ابعاد به باکس‌های طول و عرض
-// =====================================
-
-let lengthInput =
-    document.getElementById("length");
-
-let widthInput =
-    document.getElementById("width");
-
-
-if(lengthInput){
-
-    lengthInput.value =
-        line1.meter;
-
 }
 
-
-if(widthInput){
-
-    widthInput.value =
-        line2.meter;
-
-}
-
-
-// محاسبه مساحت
-if(
-    typeof calculateArea ===
-    "function"
-){
-
-    calculateArea();
-
-}
-
-}
 
 function redrawCanvas(){
-
 
 
     ctx.clearRect(
@@ -1648,76 +1342,56 @@ if(planImage){
 }
 
     ctx.lineWidth=4;
-
     ctx.lineCap="round";
-
-
     ctx.strokeStyle="black";
-
-
 
 
     lines.forEach(function(line){
 
 
-
         ctx.beginPath();
 
 
-
         ctx.moveTo(
-
             line.x1,
-
             line.y1
-
         );
-
 
 
         ctx.lineTo(
-
             line.x2,
-
             line.y2
-
         );
-
 
 
         ctx.stroke();
 
-if(line.meter){
+    if(line.meter){
 
-    let centerX =
-        (line.x1 + line.x2) / 2;
+        let centerX =
+            (line.x1 + line.x2) / 2;
 
-    let centerY =
-        (line.y1 + line.y2) / 2;
+        let centerY =
+            (line.y1 + line.y2) / 2;
 
+        ctx.font = "bold 18px Arial";
+        ctx.fillStyle = "red";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
 
-    ctx.font = "bold 18px Arial";
+        ctx.fillText(
+            line.meter + " متر",
+            centerX,
+            centerY - 12
+        );
 
-    ctx.fillStyle = "red";
-
-    ctx.textAlign = "center";
-
-    ctx.textBaseline = "middle";
-
-
-    ctx.fillText(
-        line.meter + " متر",
-        centerX,
-        centerY - 12
-    );
-
-}
+    }
 
     });
 
 
-
 }
+
 
 // ==========================================
 // محاسبه مساحت واقعی فضای نامنظم
@@ -1742,7 +1416,6 @@ function calculateIrregularArea(){
 
         // اگر اضلاع روبه‌رو تقریباً برابر باشند
         // شکل را مستطیل در نظر می‌گیریم
-
         if(
             Math.abs(a - c) < 0.2 &&
             Math.abs(b - d) < 0.2
@@ -1762,13 +1435,11 @@ function calculateIrregularArea(){
         }
     }
 
-
     // ==========================================
     // چندضلعی نامنظم واقعی
     // ==========================================
 
     let points = [];
-
     let currentX = 0;
     let currentY = 0;
 
@@ -1776,7 +1447,6 @@ function calculateIrregularArea(){
         x: currentX,
         y: currentY
     });
-
 
     lines.forEach(function(line){
 
@@ -1819,11 +1489,9 @@ function calculateIrregularArea(){
 
     });
 
-
     if(points.length < 4){
         return;
     }
-
 
     // ==========================================
     // Shoelace
@@ -1832,30 +1500,26 @@ function calculateIrregularArea(){
     let area = 0;
 
     for(
-        let i = 0;
-        i < points.length - 1;
+        let i=0;
+        i<points.length-1;
         i++
     ){
 
         area +=
             (
                 points[i].x *
-                points[i + 1].y
+                points[i+1].y
             )
             -
             (
-                points[i + 1].x *
+                points[i+1].x *
                 points[i].y
             );
 
     }
 
-
-    let last =
-        points[points.length - 1];
-
-    let first =
-        points[0];
+    let last = points[points.length-1];
+    let first = points[0];
 
     area +=
         (
@@ -1868,10 +1532,7 @@ function calculateIrregularArea(){
             last.y
         );
 
-
-    area =
-        Math.abs(area) / 2;
-
+    area = Math.abs(area) / 2;
 
     document.getElementById("area").innerText =
         area.toFixed(2);
@@ -1879,20 +1540,13 @@ function calculateIrregularArea(){
     document.getElementById("hiddenArea").value =
         area.toFixed(2);
 
-
-    console.log(
-        "========== IRREGULAR AREA =========="
-    );
-
+    console.log("========== IRREGULAR AREA ==========");
     console.log("POINTS:", points);
-
     console.log("AREA:", area);
-
 }
 
 
 // پاک کردن نقشه
-
 
 document
 .querySelector("form")
@@ -1906,9 +1560,7 @@ function(){
 
 
 
-
 resizeCanvas();
-
 
 
 console.log(
@@ -1933,31 +1585,25 @@ function calculateArea(){
     ) || 0;
 
 
-
     let width =
     parseFloat(
         document.getElementById("width").value
     ) || 0;
 
 
-
     let area =
     length * width;
-
 
 
     document.getElementById("area").innerText =
     area.toFixed(2);
 
 
-
     document.getElementById("hiddenArea").value =
     area.toFixed(2);
 
 
-
     suggestRollSize();
-
 
 
 }
@@ -1984,7 +1630,6 @@ calculateArea
 
 
 
-
 // ===============================
 // موتور پیشنهاد طاقه
 // ===============================
@@ -1993,12 +1638,10 @@ calculateArea
 function suggestRollSize(){
 
 
-
     let length =
     parseFloat(
         document.getElementById("length").value
     ) || 0;
-
 
 
     let width =
@@ -2007,338 +1650,173 @@ function suggestRollSize(){
     ) || 0;
 
 
-
     if(length<=0 || width<=0){
 
-
         document.getElementById("suggestRoll").innerText="-";
-
-
         document.getElementById("cutInfo").innerText="-";
-
-
         return;
 
     }
-
-
 
 
     let area =
     length * width;
 
 
-
     let rolls=[];
-
 
 
     // -------------------------
     // یک طاقه
     // -------------------------
 
-
     for(let i=1;i<=15;i++){
 
-
-        if(
-            (3*i)>=area
-        ){
-
+        if((3*i)>=area){
 
             rolls.push({
-
                 length:i,
-
                 count:1
-
             });
-
-
 
             showRollResult(
                 rolls,
                 "یک طاقه با کمترین پرت"
             );
 
-
             return;
-
         }
-
-
     }
-
-
-
-
 
 
     // -------------------------
     // دو طاقه
     // -------------------------
 
-
     let best=null;
 
+    for(let a=1;a<=15;a++){
 
-
-    for(
-        let a=1;
-        a<=15;
-        a++
-    ){
-
-
-        for(
-            let b=1;
-            b<=15;
-            b++
-        ){
-
+        for(let b=1;b<=15;b++){
 
             let cover =
             (3*a)+(3*b);
 
-
-
             let waste =
             cover-area;
-
-
 
             if(
                 waste>=0 &&
                 (!best || waste<best.waste)
             ){
 
-
                 best={
-
                     a:a,
-
                     b:b,
-
                     waste:waste
-
                 };
 
-
             }
-
-
-
         }
-
-
     }
-
-
-
-
 
 
     if(best){
 
-
         rolls.push({
-
             length:best.a,
-
             count:1
-
         });
-
-
 
         rolls.push({
-
             length:best.b,
-
             count:1
-
         });
-
-
 
         showRollResult(
             rolls,
             "دو طاقه با کمترین پرت"
         );
-
-
     }
-
-
-
-
 }
 
 
 
-
-
-
-
 // نمایش نتیجه پیشنهاد
-
 
 function showRollResult(
     rolls,
     text
 ){
 
-
-
     document.getElementById(
         "suggestRoll"
     ).innerText =
-
-
-
-    rolls.map(function(r){
-
-
-        return "3×"+r.length+
-        " تعداد "+r.count;
-
-
-    }).join(" + ");
-
-
-
+        rolls.map(function(r){
+            return "3×"+r.length+
+            " تعداد "+r.count;
+        }).join(" + ");
 
     document.getElementById(
         "cutInfo"
     ).innerText=text;
 
-
-
     setSuggestedRolls(rolls);
-
-
-
 }
-
-
-
-
 
 
 
 // ساخت لیست طاقه‌ها
 
-
 function setSuggestedRolls(rolls){
 
-
-
     let box =
-    document.getElementById(
-        "rollContainer"
-    );
-
-
+    document.getElementById("rollContainer");
 
     box.innerHTML="";
 
-
-
     rolls.forEach(function(item){
-
-
 
         let row =
         document.createElement("div");
 
-
-
         row.className =
         "row g-3 mt-2";
 
-
-
         row.innerHTML=`
-
-
 <div class="col-8">
-
-
 <select class="form-select roll-select">
-
-
 ${Array.from(
 {length:15},
 (_,i)=>{
-
-
 let n=i+1;
-
-
 return `
-
 <option value="${n}"
 ${n==item.length?"selected":""}>
-
 3×${n}
-
 </option>
-
 `;
-
 }).join("")}
-
-
-
 </select>
-
-
 </div>
-
-
-
 <div class="col-4">
-
-
 <input
-
 type="number"
-
 class="form-control roll-count"
-
 value="${item.count}"
-
 min="1">
-
-
 </div>
-
-
 `;
-
-
 
         box.appendChild(row);
-
-
-
     });
 
-
-
     updateRollArea();
-
-
 }
 
 
 
-
-
-
-
 // افزودن دستی طاقه
-
 
 document
 .getElementById("addRollBtn")
@@ -2346,137 +1824,72 @@ document
 "click",
 function(){
 
+    let box =
+    document.getElementById("rollContainer");
 
+    let row =
+    document.createElement("div");
 
-let box =
-document.getElementById(
-"rollContainer"
-);
+    row.className =
+    "row g-3 mt-2";
 
-
-
-let row =
-document.createElement("div");
-
-
-
-row.className =
-"row g-3 mt-2";
-
-
-
-row.innerHTML=`
-
-
+    row.innerHTML=`
 <div class="col-8">
-
-
 <select class="form-select roll-select">
-
 ${Array.from(
 {length:15},
 (_,i)=>`
-
 <option value="${i+1}">
 3×${i+1}
 </option>
-
 `).join("")}
-
-
 </select>
-
-
 </div>
-
-
-
 <div class="col-4">
-
-
 <input
-
 type="number"
-
 class="form-control roll-count"
-
 value="1"
-
 min="1">
-
-
 </div>
-
-
 `;
 
-
-
-box.appendChild(row);
-
-
-updateRollArea();
-
-
+    box.appendChild(row);
+    updateRollArea();
 });
-
-
-
 
 
 
 // محاسبه پوشش طاقه
 
-
 function updateRollArea(){
 
+    let total=0;
 
-let total=0;
+    document
+    .querySelectorAll("#rollContainer .row")
+    .forEach(function(row){
 
+        let length =
+        parseFloat(
+            row.querySelector(".roll-select").value
+        );
 
+        let count =
+        parseFloat(
+            row.querySelector(".roll-count").value
+        );
 
-document
-.querySelectorAll(
-"#rollContainer .row"
-)
-.forEach(function(row){
+        total +=
+        (3*length)*count;
 
+    });
 
-
-let length =
-parseFloat(
-row.querySelector(".roll-select").value
-);
-
-
-
-let count =
-parseFloat(
-row.querySelector(".roll-count").value
-);
-
-
-
-total +=
-(3*length)*count;
-
-
-
-});
-
-
-
-document.getElementById(
-"rollArea"
-).innerText =
-total.toFixed(2);
-
-
-
+    document.getElementById(
+        "rollArea"
+    ).innerText =
+        total.toFixed(2);
 }
-
-
-
 
 
 
@@ -2484,25 +1897,13 @@ document.addEventListener(
 "input",
 function(e){
 
-
-
 if(
-e.target.classList.contains(
-"roll-count"
-)
-||
-e.target.classList.contains(
-"roll-select"
-)
+    e.target.classList.contains("roll-count")
+    ||
+    e.target.classList.contains("roll-select")
 ){
-
-
-updateRollArea();
-
-
+    updateRollArea();
 }
-
-
 
 });
 
@@ -2519,131 +1920,56 @@ updateRollArea();
 
 function saveSpaceData(){
 
-
-
     // نام فضا
-
     document.getElementById("hiddenName").value =
-
     document.getElementById("spaceNameText").value;
 
 
-
-
-
     // متراژ
-
     document.getElementById("hiddenArea").value =
-
     document.getElementById("area").innerText;
 
 
-
-
-
-
-
     // تصویر پلان Canvas
-
-
     document.getElementById("hiddenDrawing").value =
-
-    canvas.toDataURL(
-        "image/png"
-    );
-
-
-
-
-
+    canvas.toDataURL("image/png");
 
 
     // ذخیره طاقه‌ها
-
-
     let rolls=[];
 
-
-
     document
-    .querySelectorAll(
-        "#rollContainer .row"
-    )
+    .querySelectorAll("#rollContainer .row")
     .forEach(function(row){
-
-
 
         let select =
         row.querySelector(".roll-select");
 
-
-
         let count =
         row.querySelector(".roll-count");
 
-
-
         if(select && count){
 
-
-
             rolls.push({
-
-
-                size:
-                "3x"+select.value,
-
-
-                length:
-                select.value,
-
-
-                count:
-                count.value
-
-
-
+                size:"3x"+select.value,
+                length:select.value,
+                count:count.value
             });
-
-
 
         }
 
-
-
     });
 
-
-
-
-
-
-
     document.getElementById("hiddenRoll").value =
-
     JSON.stringify(rolls);
 
-
-
-
-
-
     document.getElementById("hiddenRollCount").value =
-
     rolls.length;
-
-
-
 }
 
 
 
-
-
-
-
 // قبل از ارسال فرم
-
 
 document
 .getElementById("saveBtn")
@@ -2651,14 +1977,9 @@ document
 "click",
 function(){
 
-
     saveSpaceData();
 
-
 });
-
-
-
 
 
 
@@ -2672,244 +1993,203 @@ console.log(
 document
 .getElementById("uploadPlanBtn")
 .addEventListener(
-    "click",
-    function(){
+"click",
+function(){
 
-        document
-        .getElementById("planImageInput")
-        .click();
+    document
+    .getElementById("planImageInput")
+    .click();
 
-    }
+}
 );
 
 
 document
 .getElementById("planImageInput")
 .addEventListener(
-    "change",
-    function(e){
+"change",
+function(e){
 
-        let file = e.target.files[0];
-        console.log("IMAGE SELECTED:", file);
-alert("عکس انتخاب شد");
+    let file = e.target.files[0];
+    console.log("IMAGE SELECTED:", file);
+    alert("عکس انتخاب شد");
 
-        if(!file)
-            return;
+    if(!file)
+        return;
 
+    // ------------------------------
+    // نمایش فوری تصویر روی Canvas
+    // ------------------------------
 
-        // ------------------------------
-        // نمایش فوری تصویر روی Canvas
-        // ------------------------------
+    let reader = new FileReader();
 
-        let reader = new FileReader();
+    reader.onload = function(event){
 
+        let img = new Image();
 
-        reader.onload = function(event){
+        img.onload = function(){
 
-            let img = new Image();
+            planImage = img;
 
-
-            img.onload = function(){
-
-                planImage = img;
-
-                redrawCanvas();
-
-            };
-
-
-            img.src = event.target.result;
+            redrawCanvas();
 
         };
 
+        img.src = event.target.result;
 
-        reader.readAsDataURL(file);
+    };
 
-
-        // ------------------------------
-        // ارسال تصویر به Laravel
-        // ------------------------------
-
-        let formData = new FormData();
-
-        formData.append(
-            "plan_image",
-            file
-        );
-
-
-        // CSRF
-        formData.append(
-            "_token",
-            document
-                .querySelector('meta[name="csrf-token"]')
-                ?.getAttribute("content") || ""
-        );
-
-
-        // ------------------------------
-        // نمایش وضعیت
-        // ------------------------------
-
-        document.getElementById(
-            "suggestRoll"
-        ).innerText = "در حال تحلیل تصویر...";
-
-
-        document.getElementById(
-            "cutInfo"
-        ).innerText = "-";
-
-
-        // ------------------------------
-        // ارسال به Backend
-        // ------------------------------
-console.log("SENDING IMAGE TO LARAVEL");
-alert("در حال ارسال عکس به Laravel...");
-
-        fetch(
-            "{{ route('tablet.space.analyze-image') }}",
-            {
-                method: "POST",
-                body: formData,
-                headers: {
-                    "Accept": "application/json"
-                }
-            }
-        )
-
-
-        .then(function(response){
-
-            return response.json();
-
-        })
-
-
-        .then(function(result){
-
-            console.log(
-                "AI RESULT:",
-                result
-            );
-
-
-            if(!result.success){
-
-                document.getElementById(
-                    "suggestRoll"
-                ).innerText =
-                    "تحلیل انجام نشد";
-
-
-                document.getElementById(
-                    "cutInfo"
-                ).innerText =
-                    result.message || "خطا";
-
-
-                return;
-
-            }
-
-// ==========================================
-// دریافت نتیجه تحلیل Backend
-// ==========================================
-
-console.log(
-    "نتیجه تحلیل:",
-    result.analysis
-);
-
-
-if(result.analysis){
-
-    let analysis =
-        result.analysis;
-
+    reader.readAsDataURL(file);
 
     // ------------------------------
-    // طول
+    // ارسال تصویر به Laravel
     // ------------------------------
 
-    if(
-        analysis.length !== null
-    ){
+    let formData = new FormData();
 
-        document.getElementById(
-            "length"
-        ).value =
-            analysis.length;
+    formData.append("plan_image", file);
 
-    }
-
-
-    // ------------------------------
-    // عرض
-    // ------------------------------
-
-    if(
-        analysis.width !== null
-    ){
-
-        document.getElementById(
-            "width"
-        ).value =
-            analysis.width;
-
-    }
-
+    // CSRF
+    formData.append(
+        "_token",
+        document
+            .querySelector('meta[name="csrf-token"]')
+            ?.getAttribute("content") || ""
+    );
 
     // ------------------------------
-    // محاسبه متراژ
-    // ------------------------------
-
-    calculateArea();
-
-
-    // ------------------------------
-    // وضعیت
+    // نمایش وضعیت
     // ------------------------------
 
     document.getElementById(
         "suggestRoll"
-    ).innerText =
-        "پلان شناسایی شد";
-
+    ).innerText = "در حال تحلیل تصویر...";
 
     document.getElementById(
         "cutInfo"
-    ).innerText =
-        "اطلاعات تصویر دریافت شد";
+    ).innerText = "-";
 
-}
+    // ------------------------------
+    // ارسال به Backend
+    // ------------------------------
+    console.log("SENDING IMAGE TO LARAVEL");
+    alert("در حال ارسال عکس به Laravel...");
 
+    fetch(
+        "{{ route('tablet.space.analyze-image') }}",
+        {
+            method: "POST",
+            body: formData,
+            headers: {
+                "Accept": "application/json"
+            }
+        }
+    )
+    .then(function(response){
+        return response.json();
+    })
+    .then(function(result){
 
-        })
+        console.log(
+            "AI RESULT:",
+            result
+        );
 
-
-        .catch(function(error){
-
-            console.error(
-                "IMAGE ANALYSIS ERROR:",
-                error
-            );
-
+        if(!result.success){
 
             document.getElementById(
                 "suggestRoll"
             ).innerText =
-                "خطا در تحلیل";
-
+                "تحلیل انجام نشد";
 
             document.getElementById(
                 "cutInfo"
             ).innerText =
-                "ارتباط با سرور برقرار نشد";
+                result.message || "خطا";
 
-        });
+            return;
+        }
 
-    }
+        // ==========================================
+        // دریافت نتیجه تحلیل Backend
+        // ==========================================
+
+        console.log(
+            "نتیجه تحلیل:",
+            result.analysis
+        );
+
+        if(result.analysis){
+
+            let analysis =
+                result.analysis;
+
+            // ------------------------------
+            // طول
+            // ------------------------------
+
+            if(analysis.length !== null){
+
+                document.getElementById(
+                    "length"
+                ).value =
+                    analysis.length;
+            }
+
+            // ------------------------------
+            // عرض
+            // ------------------------------
+
+            if(analysis.width !== null){
+
+                document.getElementById(
+                    "width"
+                ).value =
+                    analysis.width;
+            }
+
+            // ------------------------------
+            // محاسبه متراژ
+            // ------------------------------
+
+            calculateArea();
+
+            // ------------------------------
+            // وضعیت
+            // ------------------------------
+
+            document.getElementById(
+                "suggestRoll"
+            ).innerText =
+                "پلان شناسایی شد";
+
+            document.getElementById(
+                "cutInfo"
+            ).innerText =
+                "اطلاعات تصویر دریافت شد";
+
+        }
+    })
+    .catch(function(error){
+
+        console.error(
+            "IMAGE ANALYSIS ERROR:",
+            error
+        );
+
+        document.getElementById(
+            "suggestRoll"
+        ).innerText =
+            "خطا در تحلیل";
+
+        document.getElementById(
+            "cutInfo"
+        ).innerText =
+            "ارتباط با سرور برقرار نشد";
+
+    });
+
+}
 );
 // ==========================================
 // تحلیل نقشه مشتری
@@ -2928,7 +2208,6 @@ function analyzePlanImage(){
     let width =
         document.getElementById("width");
 
-
     console.log(
         "تصویر آماده تحلیل AI است"
     );
@@ -2941,59 +2220,60 @@ function analyzePlanImage(){
 document
 .getElementById("clearBtn")
 .addEventListener(
-    "click",
-    function(){
+"click",
+function(){
 
-        // پاک کردن خطوط
-        lines = [];
+    // پاک کردن خطوط
+    lines = [];
 
-        // پاک کردن اندازه‌ها
-        dimensions = [];
+    // پاک کردن اندازه‌ها
+    dimensions = [];
 
-        // پاک کردن تصویر نقشه
-        planImage = null;
+    // پاک کردن تصویر نقشه
+    planImage = null;
 
-        // اجازه رسم مجدد
-        shapeConfirmed = false;
-irregularMode = false;
-polygonClosed = false;
-document.getElementById(
-    "finishIrregularBtn"
-).style.display = "none";
+    // اجازه رسم مجدد
+    shapeConfirmed = false;
+    irregularMode = false;
+    polygonClosed = false;
+    document.getElementById(
+        "finishIrregularBtn"
+    ).style.display = "none";
 
-        // پاک کردن Canvas
-        redrawCanvas();
+    // پاک کردن Canvas
+    redrawCanvas();
 
-        // پاک کردن طول
-        document.getElementById("length").value = "";
+    // پاک کردن طول
+    document.getElementById("length").value = "";
 
-        // پاک کردن عرض
-        document.getElementById("width").value = "";
+    // پاک کردن عرض
+    document.getElementById("width").value = "";
 
-        // صفر کردن متراژ
-        document.getElementById("area").innerText = "0";
+    // صفر کردن متراژ
+    document.getElementById("area").innerText = "0";
 
-        document.getElementById("hiddenArea").value = "0";
+    document.getElementById("hiddenArea").value = "0";
 
-        // پاک کردن پیشنهاد
-        document.getElementById("suggestRoll").innerText = "-";
+    // پاک کردن پیشنهاد
+    document.getElementById("suggestRoll").innerText = "-";
 
-        document.getElementById("cutInfo").innerText = "-";
+    document.getElementById("cutInfo").innerText = "-";
 
-        // پاک کردن طاقه‌ها
-        document.getElementById("rollContainer").innerHTML = "";
+    // پاک کردن طاقه‌ها
+    document.getElementById("rollContainer").innerHTML = "";
 
-        // صفر کردن پوشش
-        document.getElementById("rollArea").innerText = "0";
+    // صفر کردن پوشش
+    document.getElementById("rollArea").innerText = "0";
 
-        // پاک کردن تصویر ذخیره‌شده
-        document.getElementById("hiddenDrawing").value = "";
+    // پاک کردن تصویر ذخیره‌شده
+    document.getElementById("hiddenDrawing").value = "";
 
-        // پاک کردن انتخاب فایل
-        document.getElementById("planImageInput").value = "";
+    // پاک کردن انتخاب فایل
+    document.getElementById("planImageInput").value = "";
 
-    }
+}
 );
+
 </script>
 
 </body>
