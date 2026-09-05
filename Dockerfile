@@ -51,6 +51,7 @@ RUN sed -ri -e 's!/var/www/html!/var/www/html/public!g' \
 # Clear Laravel cache
 RUN php artisan optimize:clear || true
 
-EXPOSE 80
+# Render supplies PORT (normally 10000). Apache must listen on that port.
+EXPOSE 10000
 
-CMD ["apache2-foreground"]
+CMD ["sh", "-c", "PORT=${PORT:-10000}; sed -ri \"s/^Listen [0-9]+/Listen ${PORT}/\" /etc/apache2/ports.conf; sed -ri \"s/<VirtualHost \\*:80>/<VirtualHost *:${PORT}>/g\" /etc/apache2/sites-available/*.conf; exec apache2-foreground"]
