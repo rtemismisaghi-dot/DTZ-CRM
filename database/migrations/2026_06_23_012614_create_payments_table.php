@@ -12,9 +12,7 @@ return new class extends Migration
 
             $table->id();
 
-            $table->foreignId('measurement_id')
-                  ->constrained()
-                  ->cascadeOnDelete();
+            $table->foreignId('measurement_id');
 
             $table->bigInteger('amount');
 
