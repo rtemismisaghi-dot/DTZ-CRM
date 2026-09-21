@@ -12,9 +12,7 @@ return new class extends Migration
 
             $table->id();
 
-            $table->foreignId('installation_id')
-                ->constrained()
-                ->cascadeOnDelete();
+            $table->foreignId('installation_id');
 
             $table->foreignId('user_id')
                 ->nullable();
