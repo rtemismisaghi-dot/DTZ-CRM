@@ -73,6 +73,17 @@ public function prepare(Installation $installation)
 {
     return view('installations.prepare', compact('installation'));
 }
+
+public function palazPrepare(Installation $installation)
+{
+    $completeUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+        'palaz.installations.complete',
+        now()->addHours(4),
+        ['installation' => $installation->id]
+    );
+
+    return view('installations.prepare', compact('installation', 'completeUrl'));
+}
     public function edit(Installation $installation)
     {
         //
