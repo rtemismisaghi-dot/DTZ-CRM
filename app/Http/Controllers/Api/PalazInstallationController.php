@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Models\Installation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 
 class PalazInstallationController extends Controller
@@ -17,10 +18,7 @@ class PalazInstallationController extends Controller
         $providedToken = (string) $request->bearerToken();
 
         if ($expectedToken === '' || $providedToken === '' || ! hash_equals($expectedToken, $providedToken)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized.',
-            ], 401);
+            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 401);
         }
 
         $data = $request->validate([
@@ -33,28 +31,19 @@ class PalazInstallationController extends Controller
             'product_model' => ['nullable', 'string', 'max:255'],
             'quantity' => ['nullable', 'numeric', 'min:0'],
             'area' => ['nullable', 'numeric', 'min:0'],
-            'description' => ['nullable', 'string', 'max:2000'],
+            'description' => ['nullable', 'string', 'max:4000'],
             'palaz_order_id' => ['nullable', 'string', 'max:120'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
         ]);
 
         $reference = $data['palaz_order_id'] ?? null;
+        $existing = $reference
+            ? Installation::where('external_source', 'palaz')->where('external_reference', $reference)->first()
+            : null;
 
-        if ($reference) {
-            $existing = Installation::where('external_source', 'palaz')
-                ->where('external_reference', $reference)
-                ->first();
-
-            if ($existing) {
-                return response()->json([
-                    'success' => true,
-                    'existing' => true,
-                    'installation_id' => $existing->id,
-                    'tracking_code' => $existing->tracking_code,
-                    'status' => $existing->status,
-                ]);
-            }
+        if ($existing) {
+            return $this->installationResponse($existing, true);
         }
 
         $customer = Customer::firstOrCreate(
@@ -67,7 +56,7 @@ class PalazInstallationController extends Controller
             ]
         );
 
-        if ($customer->wasRecentlyCreated === false) {
+        if (! $customer->wasRecentlyCreated) {
             $customer->fill([
                 'name' => $data['name'],
                 'address' => $data['address'] ?? $customer->address,
@@ -79,14 +68,14 @@ class PalazInstallationController extends Controller
         $productSummary = collect([
             $data['product_title'] ?? null,
             $data['product_model'] ?? null,
-            $data['product_code'] ? 'کد: ' . $data['product_code'] : null,
+            isset($data['product_code']) ? 'کد: ' . $data['product_code'] : null,
             isset($data['quantity']) ? 'تعداد: ' . $data['quantity'] : null,
-            isset($data['area']) ? 'متراژ: ' . $data['area'] : null,
+            isset($data['area']) ? 'متراژ اولیه: ' . $data['area'] : null,
         ])->filter()->implode(' | ');
 
         $description = collect([
             $productSummary ? 'محصول: ' . $productSummary : null,
-            $data['city'] ?? null ? 'شهر: ' . $data['city'] : null,
+            isset($data['city']) ? 'شهر: ' . $data['city'] : null,
             $data['description'] ?? null,
         ])->filter()->implode("\n");
 
@@ -106,13 +95,74 @@ class PalazInstallationController extends Controller
             'external_reference' => $reference,
         ]);
 
+        return $this->installationResponse($installation, false);
+    }
+
+    public function quote(Request $request, Installation $installation): JsonResponse
+    {
+        $expectedToken = (string) config('palaz.integration_token');
+        $providedToken = (string) $request->bearerToken();
+
+        if ($expectedToken === '' || $providedToken === '' || ! hash_equals($expectedToken, $providedToken)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 401);
+        }
+
         return response()->json([
             'success' => true,
-            'existing' => false,
+            'installation_id' => $installation->id,
+            'tracking_code' => $installation->tracking_code,
+            'external_reference' => $installation->external_reference,
+            'total_amount' => (float) ($installation->quote_amount ?? 0),
+            'quote_payload' => $installation->quote_payload,
+        ]);
+    }
+
+    public function complete(Request $request, Installation $installation): JsonResponse
+    {
+        $data = $request->validate([
+            'total_amount' => ['required', 'numeric', 'min:0'],
+            'payload' => ['nullable', 'array'],
+        ]);
+
+        $installation->update([
+            'quote_amount' => $data['total_amount'],
+            'quote_payload' => $data['payload'] ?? null,
+            'payment_status' => 'pending',
+        ]);
+
+        $palazBase = rtrim((string) config('services.palaz.url'), '/');
+        $orderId = $installation->external_reference;
+        $callback = $palazBase !== '' && $orderId
+            ? $palazBase . '/checkout/installation-complete?order_id=' . rawurlencode($orderId)
+                . '&installation_id=' . $installation->id
+                . '&tracking_code=' . rawurlencode($installation->tracking_code)
+            : null;
+
+        return response()->json([
+            'success' => true,
+            'installation_id' => $installation->id,
+            'tracking_code' => $installation->tracking_code,
+            'total_amount' => (float) $installation->quote_amount,
+            'callback_url' => $callback,
+        ]);
+    }
+
+    private function installationResponse(Installation $installation, bool $existing): JsonResponse
+    {
+        $prepareUrl = URL::temporarySignedRoute(
+            'palaz.installations.prepare',
+            now()->addHours(4),
+            ['installation' => $installation->id]
+        );
+
+        return response()->json([
+            'success' => true,
+            'existing' => $existing,
             'installation_id' => $installation->id,
             'tracking_code' => $installation->tracking_code,
             'status' => $installation->status,
-        ], 201);
+            'prepare_url' => $prepareUrl,
+        ], $existing ? 200 : 201);
     }
 
     private function trackingCode(): string

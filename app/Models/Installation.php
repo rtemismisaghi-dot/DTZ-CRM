@@ -41,6 +41,8 @@ class Installation extends Model
         'external_source',
 
         'external_reference',
+        'quote_amount',
+        'quote_payload',
 
     ];
 
@@ -48,6 +50,7 @@ class Installation extends Model
     protected $casts = [
 
         'installation_date' => 'date',
+        'quote_payload' => 'array',
 
     ];
 
