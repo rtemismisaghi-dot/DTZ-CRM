@@ -7,3 +7,8 @@ Route::middleware('throttle:60,1')->post(
     '/palaz/installations',
     [PalazInstallationController::class, 'store']
 )->name('api.palaz.installations.store');
+
+Route::middleware('throttle:60,1')->get(
+    '/palaz/installations/{installation}/quote',
+    [PalazInstallationController::class, 'quote']
+)->name('api.palaz.installations.quote');
