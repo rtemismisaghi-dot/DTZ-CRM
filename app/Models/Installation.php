@@ -38,6 +38,10 @@ class Installation extends Model
 
         'image',
 
+        'external_source',
+
+        'external_reference',
+
     ];
 
 
