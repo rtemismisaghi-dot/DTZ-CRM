@@ -6038,6 +6038,111 @@ console.log('HTML =', html);
     document.getElementById('reviewSpaces').innerHTML = html;
 
 }
+
+// ===============================
+// PALAZ ONLINE FINAL QUOTE
+// ===============================
+
+function palazDigits(value){
+    return String(value ?? '').replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
+}
+
+function palazMoneyValue(selector){
+    const el = document.querySelector(selector);
+    if(!el) return 0;
+    const text = palazDigits(el.textContent || el.value || '');
+    const number = text.replace(/[^0-9.]/g, '');
+    return Number(number) || 0;
+}
+
+function palazQuotePayload(){
+    const payload = { fields: {}, spaces: [] };
+
+    document.querySelectorAll('input[name], select[name], textarea[name]').forEach(function(el){
+        if(el.type === 'file') return;
+        if((el.type === 'radio' || el.type === 'checkbox') && !el.checked) return;
+        payload.fields[el.name] = el.value;
+    });
+
+    document.querySelectorAll('.space-card').forEach(function(card){
+        const space = {
+            name: card.querySelector('.space-title')?.innerText?.trim() || '',
+            area: card.querySelector('.space-area')?.innerText?.trim() || '',
+            rolls: []
+        };
+        card.querySelectorAll('.roll-item').forEach(function(item){
+            space.rolls.push({
+                size: item.querySelector('.roll-size')?.value || '',
+                count: item.querySelector('.roll-count')?.value || '1'
+            });
+        });
+        payload.spaces.push(space);
+    });
+
+    return payload;
+}
+
+function palazUpdateReviewTotal(){
+    if(typeof calculateTotal === 'function') calculateTotal();
+
+    const total = palazMoneyValue('#install-price')
+        + palazMoneyValue('#gluePrice')
+        + palazMoneyValue('#floorPrice')
+        + palazMoneyValue('#floorCarryPrice')
+        + palazMoneyValue('#workerPrice');
+
+    const totalRows = document.querySelectorAll('.total-row b');
+    totalRows.forEach(el => el.textContent = total.toLocaleString('fa-IR') + ' ریال');
+
+    return total;
+}
+
+const palazFinalizeButton = document.getElementById('palaz-finalize-installation');
+if(palazFinalizeButton){
+    palazFinalizeButton.addEventListener('click', async function(){
+        const message = document.getElementById('palaz-finalize-message');
+        const total = palazUpdateReviewTotal();
+
+        palazFinalizeButton.disabled = true;
+        palazFinalizeButton.textContent = 'در حال ثبت محاسبه...';
+        if(message){
+            message.style.display = 'block';
+            message.textContent = 'در حال ذخیره اطلاعات و محاسبه مبلغ نهایی...';
+        }
+
+        try{
+            const response = await fetch(@json($completeUrl), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': @json(csrf_token())
+                },
+                body: JSON.stringify({
+                    total_amount: total,
+                    payload: palazQuotePayload()
+                })
+            });
+
+            const data = await response.json();
+            if(!response.ok || !data.success) throw new Error(data.message || 'ثبت محاسبه انجام نشد.');
+
+            if(data.callback_url){
+                window.location.href = data.callback_url;
+                return;
+            }
+
+            if(message) message.textContent = 'مبلغ نهایی: ' + Number(data.total_amount || 0).toLocaleString('fa-IR') + ' ریال';
+            palazFinalizeButton.textContent = 'محاسبه ثبت شد';
+        }catch(error){
+            console.error(error);
+            palazFinalizeButton.disabled = false;
+            palazFinalizeButton.textContent = 'تایید نهایی و ادامه سفارش';
+            if(message) message.textContent = 'ثبت محاسبه انجام نشد. دوباره تلاش کنید.';
+        }
+    });
+}
+
 </script>
 
 
