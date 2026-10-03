@@ -8,6 +8,7 @@ use App\Http\Controllers\MeasurementController;
 use App\Http\Controllers\InstallationController;
 use App\Http\Controllers\Tablet\TabletController;
 use App\Http\Controllers\TabletPlanController;
+use App\Http\Controllers\Api\PalazInstallationController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -97,6 +98,14 @@ Route::get('/installations/{installation}/prepare',
     Route::delete('/profile', [ProfileController::class, 'destroy'])
         ->name('profile.destroy');
 });
+
+Route::get('/palaz/installations/{installation}/prepare', [InstallationController::class, 'palazPrepare'])
+    ->middleware('signed')
+    ->name('palaz.installations.prepare');
+
+Route::post('/palaz/installations/{installation}/complete', [PalazInstallationController::class, 'complete'])
+    ->middleware('signed')
+    ->name('palaz.installations.complete');
 
 require __DIR__.'/auth.php';
 // ==========================
