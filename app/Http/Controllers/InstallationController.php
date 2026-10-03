@@ -73,6 +73,11 @@ public function prepare(Installation $installation)
 {
     return view('installations.prepare', compact('installation'));
 }
+
+public function palazPrepare(Installation $installation)
+{
+    return view('installations.prepare', compact('installation'));
+}
     public function edit(Installation $installation)
     {
         //
