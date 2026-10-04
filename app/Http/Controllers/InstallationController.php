@@ -71,18 +71,37 @@ class InstallationController extends Controller
     }
 public function prepare(Installation $installation)
 {
+    if ($installation->external_source === 'palaz') {
+        $customerUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+            'palaz.installations.prepare',
+            now()->addHours(4),
+            ['installation' => $installation->id]
+        );
+
+        return redirect()->to($customerUrl);
+    }
+
     return view('installations.prepare', compact('installation'));
 }
 
 public function palazPrepare(Installation $installation)
 {
+    abort_unless($installation->external_source === 'palaz', 404);
+
     $completeUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
         'palaz.installations.complete',
         now()->addHours(4),
         ['installation' => $installation->id]
     );
 
-    return view('installations.prepare', compact('installation', 'completeUrl'));
+    $palazRolls = data_get($installation->quote_payload, 'rolls', []);
+
+    return view('installations.prepare', [
+        'installation' => $installation,
+        'completeUrl' => $completeUrl,
+        'palazRolls' => $palazRolls,
+        'palazCustomerView' => true,
+    ]);
 }
     public function edit(Installation $installation)
     {
