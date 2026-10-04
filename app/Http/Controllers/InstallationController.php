@@ -82,7 +82,9 @@ public function palazPrepare(Installation $installation)
         ['installation' => $installation->id]
     );
 
-    return view('installations.prepare', compact('installation', 'completeUrl'));
+    $palazRolls = data_get($installation->quote_payload, 'rolls', []);
+
+    return view('installations.prepare', compact('installation', 'completeUrl', 'palazRolls'));
 }
     public function edit(Installation $installation)
     {
