@@ -82,6 +82,9 @@ href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.m
             object-fit:cover;
         }
 
+        .palaz-customer-view .content{margin-right:0;padding:0;width:100%;}
+        .palaz-customer-view{background:#fff;}
+
         .product-title{
             text-align:center;
             padding:8px;
@@ -91,9 +94,10 @@ href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.m
     </style>
 </head>
 
-<body>
+<body class="{{ request()->routeIs('palaz.installations.prepare') ? 'palaz-customer-view' : '' }}">
 
 <!-- SIDEBAR -->
+@if(!request()->routeIs('palaz.installations.prepare'))
 <div class="sidebar">
 
     <div class="logo">
@@ -109,6 +113,7 @@ href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.m
     </div>
 
 </div>
+@endif
 
 <!-- CONTENT -->
 <div class="content">
