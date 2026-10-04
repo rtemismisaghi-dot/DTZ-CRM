@@ -131,6 +131,44 @@ class PalazInstallationController extends Controller
         ]);
     }
 
+    public function completeApi(Request $request, Installation $installation): JsonResponse
+    {
+        $expectedToken = (string) config('palaz.integration_token');
+        $providedToken = (string) $request->bearerToken();
+
+        if ($expectedToken === '' || $providedToken === '' || ! hash_equals($expectedToken, $providedToken)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 401);
+        }
+
+        $data = $request->validate([
+            'total_amount' => ['required', 'numeric', 'min:0'],
+            'payload' => ['nullable', 'array'],
+        ]);
+
+        $existingPayload = is_array($installation->quote_payload) ? $installation->quote_payload : [];
+        $finalPayload = is_array($data['payload'] ?? null) ? $data['payload'] : [];
+        $purchasedArea = (float) ($existingPayload['purchased_area'] ?? 0);
+        $baseInstallationAmount = $purchasedArea > 0 ? $purchasedArea * 385000 : 0;
+        $finalTotalAmount = max((float) $data['total_amount'], $baseInstallationAmount);
+
+        $installation->update([
+            'quote_amount' => $finalTotalAmount,
+            'quote_payload' => array_merge($existingPayload, [
+                'final_quote' => $finalPayload,
+                'final_total_amount' => $finalTotalAmount,
+                'purchased_area_locked' => $purchasedArea > 0,
+            ]),
+            'payment_status' => 'pending',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'installation_id' => $installation->id,
+            'tracking_code' => $installation->tracking_code,
+            'total_amount' => (float) $installation->quote_amount,
+        ]);
+    }
+
     public function complete(Request $request, Installation $installation): JsonResponse
     {
         $data = $request->validate([
