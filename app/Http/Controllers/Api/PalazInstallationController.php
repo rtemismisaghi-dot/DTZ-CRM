@@ -35,6 +35,14 @@ class PalazInstallationController extends Controller
             'palaz_order_id' => ['nullable', 'string', 'max:120'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'rolls' => ['nullable', 'array', 'max:100'],
+            'rolls.*.code' => ['nullable', 'string', 'max:100'],
+            'rolls.*.name' => ['nullable', 'string', 'max:255'],
+            'rolls.*.model' => ['nullable', 'string', 'max:255'],
+            'rolls.*.width' => ['nullable', 'numeric', 'min:1', 'max:10'],
+            'rolls.*.length' => ['nullable', 'numeric', 'min:1', 'max:15'],
+            'rolls.*.quantity' => ['nullable', 'numeric', 'min:1'],
+            'rolls.*.area' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         $reference = $data['palaz_order_id'] ?? null;
@@ -93,6 +101,12 @@ class PalazInstallationController extends Controller
             'longitude' => $data['longitude'] ?? null,
             'external_source' => 'palaz',
             'external_reference' => $reference,
+            'quote_payload' => [
+                'source' => 'palaz_online',
+                'purchased_area' => isset($data['area']) ? (float) $data['area'] : null,
+                'purchased_quantity' => isset($data['quantity']) ? (float) $data['quantity'] : null,
+                'rolls' => $data['rolls'] ?? [],
+            ],
         ]);
 
         return $this->installationResponse($installation, false);
