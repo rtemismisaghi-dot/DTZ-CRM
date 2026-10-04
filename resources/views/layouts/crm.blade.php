@@ -116,10 +116,6 @@
     <!-- MENU -->
     <div class="menu">
 
-        <a href="/dashboard">
-            <i class="fa fa-home"></i> داشبورد
-        </a>
-
         <a href="/customers">
             <i class="fa fa-users"></i> مشتریان
         </a>
