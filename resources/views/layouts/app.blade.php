@@ -105,9 +105,8 @@ href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.m
     </div>
 
     <div class="menu">
-        <a href="/dashboard">داشبورد</a>
-        <a href="/measurements">اندازه گیری</a>
         <a href="/installations">نصب</a>
+        <a href="/measurements">اندازه گیری</a>
         <a href="/repairs">اصلاحیه</a>
         <a href="/customers">مشتریان</a>
     </div>
