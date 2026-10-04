@@ -84,7 +84,12 @@ public function palazPrepare(Installation $installation)
 
     $palazRolls = data_get($installation->quote_payload, 'rolls', []);
 
-    return view('installations.prepare', compact('installation', 'completeUrl', 'palazRolls'));
+    return view('installations.prepare', [
+        'installation' => $installation,
+        'completeUrl' => $completeUrl,
+        'palazRolls' => $palazRolls,
+        'palazCustomerView' => true,
+    ]);
 }
     public function edit(Installation $installation)
     {
