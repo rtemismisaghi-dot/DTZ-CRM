@@ -1,4 +1,4 @@
-@extends(($palazCustomerView ?? false) ? 'layouts.palaz-customer' : 'layouts.app')
+@extends(request()->routeIs('palaz.installations.prepare') ? 'layouts.palaz-customer' : 'layouts.app')
 
 @section('content')
 
@@ -2487,7 +2487,7 @@
 
 
 
-.palaz-customer-finalize{margin:18px 0 30px;padding:18px;border:1px solid #eadfd8;border-radius:16px;background:#fcfaf8;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}.palaz-customer-finalize-copy{display:flex;flex-direction:column;gap:5px}.palaz-customer-finalize-copy strong{font-size:15px}.palaz-customer-finalize-copy span{font-size:12px;color:#746b66}.palaz-customer-finalize-btn{border:0;border-radius:12px;padding:13px 20px;background:#171717;color:#fff;font-family:inherit;font-weight:800;cursor:pointer}.palaz-customer-finalize-btn:disabled{opacity:.6;cursor:wait}.palaz-customer-finalize-message{display:none;width:100%;font-size:12px;color:#6d625c}@media(max-width:700px){.palaz-customer-finalize{align-items:stretch}.palaz-customer-finalize-btn{width:100%}}.review-footer{
+.palaz-customer-finalize{margin:18px 0 30px;padding:18px;border:1px solid #eadfd8;border-radius:16px;background:#fcfaf8;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}.palaz-customer-finalize-copy{display:flex;flex-direction:column;gap:5px}.palaz-customer-finalize-copy strong{font-size:15px}.palaz-customer-finalize-copy span{font-size:12px;color:#746b66}.palaz-customer-finalize-btn{border:0;border-radius:12px;padding:13px 20px;background:#171717;color:#fff;font-family:inherit;font-weight:800;cursor:pointer}.palaz-customer-finalize-btn:disabled{opacity:.6;cursor:wait}.palaz-customer-finalize-message{display:none;width:100%;font-size:12px;color:#6d625c}@media(max-width:700px){.palaz-customer-finalize{align-items:stretch}.palaz-customer-finalize-btn{width:100%}}
 
     display:flex;
 
