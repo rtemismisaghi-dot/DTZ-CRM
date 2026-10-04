@@ -146,11 +146,23 @@ class PalazInstallationController extends Controller
             ? $data['payload']
             : [];
 
+        // For Palaz Online orders the purchased rolls are authoritative.
+        // The customer must not be able to change the purchased metrage
+        // or lower the installation quote by editing the browser payload.
+        $purchasedArea = (float) ($existingPayload['purchased_area'] ?? 0);
+        $baseInstallationAmount = $purchasedArea > 0
+            ? $purchasedArea * 385000
+            : 0;
+
+        $submittedTotal = (float) $data['total_amount'];
+        $finalTotalAmount = max($submittedTotal, $baseInstallationAmount);
+
         $installation->update([
-            'quote_amount' => $data['total_amount'],
+            'quote_amount' => $finalTotalAmount,
             'quote_payload' => array_merge($existingPayload, [
                 'final_quote' => $finalPayload,
-                'final_total_amount' => (float) $data['total_amount'],
+                'final_total_amount' => $finalTotalAmount,
+                'purchased_area_locked' => $purchasedArea > 0,
             ]),
             'payment_status' => 'pending',
         ]);
