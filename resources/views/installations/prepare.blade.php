@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends(($palazCustomerView ?? false) ? 'layouts.palaz-customer' : 'layouts.app')
 
 @section('content')
 
