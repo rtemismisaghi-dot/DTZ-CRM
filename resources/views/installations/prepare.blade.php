@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends(($palazCustomerView ?? false) ? 'layouts.palaz-customer' : 'layouts.app')
 
 @section('content')
 
@@ -4636,9 +4636,18 @@ oninput="calculateFish()">
         </button>
 
 
-        <button class="review-btn success">
+        <button class="review-btn success" @if($palazCustomerView ?? false) style="display:none" @endif>
             تایید نهایی
         </button>
+
+@if($palazCustomerView ?? false)
+<div class="palaz-finalize-box" style="margin:18px 0 30px;padding:18px;border:1px solid #eadfd8;border-radius:16px;background:#fcfaf8">
+    <strong style="display:block;font-size:15px;margin-bottom:6px">تکمیل فرآیند نصب</strong>
+    <span style="display:block;color:#756d68;font-size:12px;line-height:1.8;margin-bottom:12px">پس از تأیید، مبلغ نهایی نصب به سفارش شما در پالاز آنلاین برمی‌گردد.</span>
+    <button type="button" id="palaz-finalize-installation" class="review-btn success">تأیید نهایی و ادامه سفارش</button>
+    <div id="palaz-finalize-message" style="display:none;margin-top:10px;font-size:12px;color:#756d68"></div>
+</div>
+@endif
 
 
     </div>
