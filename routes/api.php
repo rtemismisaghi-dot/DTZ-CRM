@@ -12,3 +12,8 @@ Route::middleware('throttle:60,1')->get(
     '/palaz/installations/{installation}/quote',
     [PalazInstallationController::class, 'quote']
 )->name('api.palaz.installations.quote');
+
+Route::middleware('throttle:60,1')->post(
+    '/palaz/installations/{installation}/complete',
+    [PalazInstallationController::class, 'completeApi']
+)->name('api.palaz.installations.complete');
