@@ -2534,12 +2534,47 @@
     color:#fff;
 
 }
+
+/* PALAZ CUSTOMER EXPERIENCE */
+.palaz-customer-shell{max-width:1180px;margin:0 auto;padding:0 22px 48px;font-family:Tahoma,Arial,sans-serif;color:#202020;}
+.palaz-brandbar{height:76px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #eee;margin-bottom:18px;}
+.palaz-brand{display:flex;align-items:center;gap:12px;font-weight:800;font-size:20px;color:#222;}
+.palaz-brand-mark{width:38px;height:38px;border-radius:11px;background:#d91f26;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;}
+.palaz-brand-note{font-size:12px;color:#777;font-weight:500;}
+.palaz-customer-shell .install-header{height:auto;min-height:92px;background:linear-gradient(135deg,#d91f26,#b9141b);border-radius:20px;margin:0 0 14px;padding:20px 28px;justify-content:flex-start;box-shadow:0 12px 30px rgba(217,31,38,.14);}
+.palaz-customer-shell .install-header-title{font-size:22px;}
+.palaz-customer-shell .install-header::after{content:'مسیر خرید تا اجرا، یک تجربه واحد';display:block;position:absolute;left:28px;bottom:20px;font-size:12px;opacity:.86;}
+.palaz-customer-shell .install-back-btn{right:auto;left:18px;}
+.palaz-customer-shell .steps-bar{margin:0 0 24px;padding:16px 12px;background:#fff;border:1px solid #eee;border-radius:18px;box-shadow:0 5px 18px rgba(0,0,0,.04);gap:0;justify-content:space-between;}
+.palaz-customer-shell .step{position:relative;flex:1;font-size:12px;color:#888;}
+.palaz-customer-shell .step:not(:last-child)::after{content:'';position:absolute;top:20px;left:0;width:100%;height:2px;background:#eee;z-index:0;}
+.palaz-customer-shell .step-circle{position:relative;z-index:1;width:40px;height:40px;background:#fff;margin-bottom:7px;}
+.palaz-customer-shell .step.active{color:#d91f26;}
+.palaz-customer-shell .step.active .step-circle{box-shadow:0 0 0 5px rgba(217,31,38,.08);}
+.palaz-customer-shell .step-card,.palaz-customer-shell .install-card,.palaz-customer-shell .project-info{border:1px solid #eee;border-radius:18px;box-shadow:0 8px 28px rgba(0,0,0,.045);}
+.palaz-customer-shell .step-title{font-size:21px;}
+.palaz-customer-shell .next-btn{background:#d91f26;border-radius:12px;padding:13px 46px;font-weight:700;box-shadow:0 8px 18px rgba(217,31,38,.16);}
+.palaz-customer-shell .next-btn:hover{background:#b9141b;}
+.palaz-customer-shell .form-control,.palaz-customer-shell .form-select{border-color:#e1e1e1;border-radius:11px;}
+.palaz-customer-shell .form-control:focus,.palaz-customer-shell .form-select:focus{border-color:#d91f26;box-shadow:0 0 0 .18rem rgba(217,31,38,.10);}
+.palaz-purchased-note{display:flex;align-items:center;gap:10px;background:#fff8f8;border:1px solid #f3d4d6;color:#6b2024;border-radius:13px;padding:13px 15px;margin-bottom:18px;font-size:13px;}
+.palaz-purchased-note i{color:#d91f26;font-size:18px;}
+@media(max-width:768px){.palaz-customer-shell{padding:0 12px 30px}.palaz-brandbar{height:62px}.palaz-brand{font-size:17px}.palaz-brand-note{display:none}.palaz-customer-shell .install-header{min-height:82px;padding:18px}.palaz-customer-shell .install-header::after{left:18px;bottom:16px}.palaz-customer-shell .steps-bar{overflow-x:auto;justify-content:flex-start;gap:8px;padding:12px}.palaz-customer-shell .step{min-width:105px}.palaz-customer-shell .step:not(:last-child)::after{display:none}.palaz-customer-shell .step-title{font-size:18px}}
 </style>
 <div class="container-fluid">
 
 <div class="prepare-wrapper">
 
 {{-- Header نصب --}}
+<div class="palaz-customer-shell">
+
+<div class="palaz-brandbar">
+    <div class="palaz-brand"><span class="palaz-brand-mark">P</span><span>پالاز</span></div>
+    <div class="palaz-brand-note">مسیر خرید تا اجرا، یک تجربه واحد • مشاوره تخصصی پالاز</div>
+</div>
+
+<div class="palaz-purchased-note"><i class="bi bi-shield-check"></i><span>اطلاعات محصول و طاقه‌های خریداری‌شده از پالاز به‌صورت خودکار ثبت شده و نیازی به ورود مجدد شما نیست.</span></div>
+
 <div class="install-header">
 
     <button
@@ -6227,5 +6262,6 @@ if(palazFinalizeButton){
 
 </script>
 
+</div>
 
 @endsection
