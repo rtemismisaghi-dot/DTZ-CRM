@@ -138,9 +138,20 @@ class PalazInstallationController extends Controller
             'payload' => ['nullable', 'array'],
         ]);
 
+        $existingPayload = is_array($installation->quote_payload)
+            ? $installation->quote_payload
+            : [];
+
+        $finalPayload = is_array($data['payload'] ?? null)
+            ? $data['payload']
+            : [];
+
         $installation->update([
             'quote_amount' => $data['total_amount'],
-            'quote_payload' => $data['payload'] ?? null,
+            'quote_payload' => array_merge($existingPayload, [
+                'final_quote' => $finalPayload,
+                'final_total_amount' => (float) $data['total_amount'],
+            ]),
             'payment_status' => 'pending',
         ]);
 
