@@ -94,10 +94,17 @@ href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.m
     </style>
 </head>
 
-<body class="{{ (request()->routeIs('palaz.installations.prepare') || request()->routeIs('account.installation') || request()->routeIs('account.installation.complete')) ? 'palaz-customer-view' : '' }}">
+@php
+    $isPalazCustomerView =
+        request()->routeIs('palaz.installations.prepare')
+        || request()->routeIs('account.installation')
+        || request()->routeIs('account.installation.complete');
+@endphp
+
+<body class="{{ $isPalazCustomerView ? 'palaz-customer-view' : '' }}">
 
 <!-- SIDEBAR -->
-@if(!(request()->routeIs('palaz.installations.prepare') || request()->routeIs('account.installation') || request()->routeIs('account.installation.complete')))
+@if(!$isPalazCustomerView)
 <div class="sidebar">
 
     <div class="logo">
