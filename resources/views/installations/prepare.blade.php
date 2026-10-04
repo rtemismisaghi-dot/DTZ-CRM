@@ -6097,6 +6097,80 @@ function palazUpdateReviewTotal(){
     return total;
 }
 
+// ===============================
+// PALAZ PURCHASED ROLLS
+// ===============================
+// For a Palaz Online order, rolls were already selected at purchase.
+// Rebuild them here only as read-only installation context.
+const palazPurchasedRolls = @json($palazRolls ?? []);
+
+function palazApplyPurchasedRolls(){
+    if(!Array.isArray(palazPurchasedRolls) || palazPurchasedRolls.length === 0) return;
+
+    const addSpaceBtn = document.getElementById('addSelectedSpaces');
+    const firstSpace = document.querySelector('.space-check[value="پذیرایی"]');
+
+    if(!addSpaceBtn || !firstSpace) return;
+
+    firstSpace.checked = true;
+    addSpaceBtn.click();
+
+    const card = document.querySelector('.space-card');
+    if(!card) return;
+
+    const list = card.querySelector('.roll-list');
+    const addRoll = card.querySelector('.add-roll');
+    if(!list || !addRoll) return;
+
+    palazPurchasedRolls.forEach((roll, index) => {
+        if(index > 0) addRoll.click();
+
+        const item = list.querySelectorAll('.roll-item')[index];
+        if(!item) return;
+
+        const width = Number(roll.width || 3);
+        const length = Number(roll.length || 1);
+        const count = Math.max(1, Number(roll.quantity || 1));
+        const size = width + 'x' + length;
+
+        const sizeSelect = item.querySelector('.roll-size');
+        const countInput = item.querySelector('.roll-count');
+
+        if(sizeSelect){
+            sizeSelect.value = size;
+            sizeSelect.style.pointerEvents = 'none';
+            sizeSelect.setAttribute('aria-readonly', 'true');
+        }
+        if(countInput){
+            countInput.value = count;
+            countInput.readOnly = true;
+            countInput.setAttribute('aria-readonly', 'true');
+        }
+    });
+
+    const total = palazPurchasedRolls.reduce((sum, roll) => {
+        return sum + (Number(roll.area) || (Number(roll.width || 3) * Number(roll.length || 1) * Number(roll.quantity || 1)));
+    }, 0);
+
+    const areaEl = card.querySelector('.space-area');
+    const totalEl = document.getElementById('total-area');
+    if(areaEl) areaEl.textContent = total + ' متر مربع';
+    if(totalEl) totalEl.textContent = total + ' متر مربع';
+
+    const addSpace = document.querySelector('.add-space');
+    if(addSpace) addSpace.style.display = 'none';
+
+    document.querySelectorAll('.space-card .add-roll, .space-card .remove-last-roll').forEach(el => {
+        el.style.display = 'none';
+    });
+
+    calculateTotal();
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+    palazApplyPurchasedRolls();
+});
+
 const palazFinalizeButton = document.getElementById('palaz-finalize-installation');
 if(palazFinalizeButton){
     palazFinalizeButton.addEventListener('click', async function(){
