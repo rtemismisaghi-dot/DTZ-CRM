@@ -258,7 +258,7 @@ return [
     */
 
     'use_route_url' => false,
-    'dashboard_url' => 'home',
+    'dashboard_url' => 'installations',
     'logout_url' => 'logout',
     'login_url' => 'login',
     'register_url' => 'register',
@@ -301,12 +301,6 @@ return [
 
     'menu' => [
     
-
-    [
-        'text' => 'داشبورد',
-        'url'  => 'dashboard',
-        'icon' => 'fas fa-home',
-    ],
 
     ['header' => 'مدیریت مشتریان'],
 
