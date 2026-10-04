@@ -6108,7 +6108,7 @@ function palazApplyPurchasedRolls(){
     if(!Array.isArray(palazPurchasedRolls) || palazPurchasedRolls.length === 0) return;
 
     const addSpaceBtn = document.getElementById('addSelectedSpaces');
-    const firstSpace = document.querySelector('.space-check[value="پذیرایی"]');
+    const firstSpace = document.querySelector('.space-check[value="سایر"]');
 
     if(!addSpaceBtn || !firstSpace) return;
 
@@ -6117,6 +6117,11 @@ function palazApplyPurchasedRolls(){
 
     const card = document.querySelector('.space-card');
     if(!card) return;
+
+    // This is not a room selection: it is the purchased Palaz order context.
+    const titleEl = card.querySelector('.space-title');
+    if(titleEl) titleEl.textContent = 'محصول خریداری‌شده از پالاز';
+    card.dataset.space = 'palaz-purchased';
 
     const list = card.querySelector('.roll-list');
     const addRoll = card.querySelector('.add-roll');
@@ -6159,6 +6164,9 @@ function palazApplyPurchasedRolls(){
 
     const addSpace = document.querySelector('.add-space');
     if(addSpace) addSpace.style.display = 'none';
+
+    const deleteSpace = card.querySelector('.delete-space');
+    if(deleteSpace) deleteSpace.style.display = 'none';
 
     document.querySelectorAll('.space-card .add-roll, .space-card .remove-last-roll').forEach(el => {
         el.style.display = 'none';
