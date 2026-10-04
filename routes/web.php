@@ -15,11 +15,10 @@ Route::get('/', function () {
 
 Route::middleware(['auth'])->group(function () {
 
-    // ==========================
-    // Dashboard
-    // ==========================
-    Route::get('/dashboard', [DashboardController::class, 'index'])
-        ->name('dashboard');
+    // Legacy dashboard URL: keep compatibility, but open the main installation workspace.
+    Route::get('/dashboard', function () {
+        return redirect()->route('installations.index');
+    })->name('dashboard');
 
     // ==========================
     // Customers
