@@ -74,13 +74,20 @@ public function prepare(Installation $installation)
     // A Palaz Online installation must always use the isolated customer flow,
     // even when an old/stale link points to the normal CRM prepare route.
     if ($installation->external_source === 'palaz') {
-        $customerUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
-            'palaz.installations.prepare',
+        $completeUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+            'palaz.installations.complete',
             now()->addHours(4),
             ['installation' => $installation->id]
         );
 
-        return redirect()->to($customerUrl);
+        $palazRolls = data_get($installation->quote_payload, 'rolls', []);
+
+        return view('installations.prepare', [
+            'installation' => $installation,
+            'completeUrl' => $completeUrl,
+            'palazRolls' => $palazRolls,
+            'palazCustomerView' => true,
+        ]);
     }
 
     return view('installations.prepare', compact('installation'));
