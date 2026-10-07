@@ -9,8 +9,7 @@ return [
     |
     | This file is for storing the credentials for third party services such
     | as Mailgun, Postmark, AWS and more. This file provides the de facto
-    | location for this type of information, allowing packages to have
-    | a conventional file to locate the various service credentials.
+    | location for storing credentials.
     |
     */
 
@@ -29,12 +28,13 @@ return [
     ],
 
     'palaz' => [
-        'url' => env('PALAZ_URL'),
+        // Palaz Online runs on :8000 locally; DTZ must return to that host.
+        'url' => env('PALAZ_URL', 'http://127.0.0.1:8000'),
     ],
 
     'slack' => [
         'notifications' => [
-            'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
+            'bot_user_oauth_token' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
