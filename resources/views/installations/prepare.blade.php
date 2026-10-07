@@ -1,4 +1,8 @@
-@extends(request()->routeIs('palaz.installations.prepare') ? 'layouts.palaz-customer' : 'layouts.app')
+@extends(
+    (!empty($palazCustomerView) || request()->routeIs('palaz.installations.prepare'))
+        ? 'layouts.palaz-customer'
+        : 'layouts.app'
+)
 
 @section('content')
 
