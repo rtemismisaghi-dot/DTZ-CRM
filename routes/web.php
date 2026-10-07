@@ -70,10 +70,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/installations/{installation}', [InstallationController::class, 'show'])
         ->name('installations.show');
-Route::get('/installations/{installation}/prepare',
-    [InstallationController::class, 'prepare'])
-    ->name('installations.prepare');
-    Route::get('/installations/{installation}/edit', [InstallationController::class, 'edit'])
+Route::get('/installations/{installation}/edit', [InstallationController::class, 'edit'])
         ->name('installations.edit');
 
     Route::put('/installations/{installation}', [InstallationController::class, 'update'])
