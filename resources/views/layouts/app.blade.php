@@ -96,7 +96,8 @@ href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.m
 
 @php
     $isPalazCustomerView =
-        request()->routeIs('palaz.installations.prepare')
+        !empty($palazCustomerView)
+        || request()->routeIs('palaz.installations.prepare')
         || request()->routeIs('account.installation')
         || request()->routeIs('account.installation.complete');
 @endphp
