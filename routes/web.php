@@ -99,6 +99,9 @@ Route::get('/installations/{installation}/prepare',
         ->name('profile.destroy');
 });
 
+Route::get('/installations/{installation}/prepare', [InstallationController::class, 'prepare'])
+    ->name('installations.prepare');
+
 Route::get('/palaz/installations/{installation}/prepare', [InstallationController::class, 'palazPrepare'])
     ->middleware('signed')
     ->name('palaz.installations.prepare');
